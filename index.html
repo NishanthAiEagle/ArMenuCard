@@ -2,32 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-<title>Japanese Cuisine — AR Menu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AR Menu</title>
+
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
 <style>
-body {
-  margin:0;
-  background:#000;
-  font-family:sans-serif;
-}
+body { margin:0; overflow:hidden; }
 #start-btn {
-  position:fixed;
-  top:50%;
-  left:50%;
+  position:fixed; top:50%; left:50%;
   transform:translate(-50%,-50%);
-  padding:16px 30px;
-  font-size:16px;
-  background:#8b1a1a;
-  color:#fff;
-  border:none;
-}
-#status {
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  color:#fff;
+  padding:16px 30px; background:#8b1a1a;
+  color:#fff; border:none; font-size:16px;
 }
 </style>
 </head>
@@ -35,104 +22,113 @@ body {
 <body>
 
 <button id="start-btn">Start AR</button>
-<div id="status">Waiting...</div>
 
-<div id="ar-wrap" style="display:none;"></div>
+<a-scene
+  id="scene"
+  mindar-image="imageTargetSrc: targets/card.mind; autoStart:false;"
+  vr-mode-ui="enabled:false"
+  device-orientation-permission-ui="enabled:false"
+  embedded>
+
+  <a-assets></a-assets>
+
+  <a-entity mindar-image-target="targetIndex: 0">
+
+    <!-- container -->
+    <a-entity id="model-container" position="0 0 0"></a-entity>
+
+  </a-entity>
+
+  <a-camera position="0 0 0"></a-camera>
+</a-scene>
 
 <script>
-const statusEl = document.getElementById("status");
-const btn = document.getElementById("start-btn");
+const ASSETS_BASE = '3d-model';
 
-btn.onclick = async () => {
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  btn.disabled = true;
-  statusEl.innerText = "Requesting camera...";
+const DISHES = [
+  {folder:'Gyoza',file:'Gyoza',scale:0.3},
+  {folder:'Edamame',file:'Edamame',scale:0.06},
+  {folder:'Karaage',file:'Karaage',scale:0.15},
+  {folder:'Miso-Soup',file:'Miso-Soup',scale:0.3},
+  {folder:'Takoyaki',file:'Takoyaki',scale:0.5},
+  {folder:'Agedashi-Tofu',file:'Agedashi-Tofu',scale:0.15},
+  {folder:'Ramen',file:'Ramen',scale:0.2},
+  {folder:'Salmon-Sashimi',file:'Salmon-Sashimi',scale:0.3},
+  {folder:'Tempura',file:'Tempura',scale:0.3},
+  {folder:'Matcha-Ice-Cream',file:'Matcha-Ice-Cream',scale:0.3}
+];
+
+document.getElementById("start-btn").onclick = async () => {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video:true });
     stream.getTracks().forEach(t => t.stop());
   } catch(e){
-    statusEl.innerText = "❌ Camera permission denied";
-    btn.disabled = false;
+    alert("Camera permission required");
     return;
   }
 
-  statusEl.innerText = "Loading AR engine...";
-
-  try {
-    await loadScript("https://aframe.io/releases/1.4.2/aframe.min.js");
-    await loadScript("https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js");
-  } catch(e){
-    statusEl.innerText = "❌ Failed loading AR libs";
-    btn.disabled = false;
-    return;
-  }
-
-  startAR();
-};
-
-function loadScript(src){
-  return new Promise((res,rej)=>{
-    const s=document.createElement("script");
-    s.src=src;
-    s.onload=res;
-    s.onerror=rej;
-    document.head.appendChild(s);
-  });
-}
-
-function startAR(){
-
-  document.getElementById("ar-wrap").style.display="block";
-  btn.style.display="none";
-
-  document.getElementById("ar-wrap").innerHTML = `
-    <a-scene
-      id="scene"
-      mindar-image="imageTargetSrc: targets/card.mind;; autoStart:false;"
-      vr-mode-ui="enabled:false"
-      device-orientation-permission-ui="enabled:false"
-      embedded>
-
-      <a-assets></a-assets>
-
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-box color="red" depth="0.2" height="0.2" width="0.2"></a-box>
-      </a-entity>
-
-      <a-camera position="0 0 0"></a-camera>
-    </a-scene>
-  `;
+  document.getElementById("start-btn").style.display="none";
 
   const scene = document.querySelector("#scene");
-
-  const startTimeout = setTimeout(()=>{
-    statusEl.innerText = "⚠️ Taking too long... check .mind file";
-  },8000);
 
   scene.addEventListener("loaded", async () => {
 
     const sys = scene.systems["mindar-image-system"];
+    await sys.start();
 
-    if(!sys){
-      statusEl.innerText = "❌ MindAR system missing";
-      return;
-    }
+    console.log("AR started");
 
-    try {
-      await sys.start();
-      clearTimeout(startTimeout);
-      statusEl.innerText = "✅ Camera started";
-      console.log("AR started successfully");
-
-    } catch(err){
-      clearTimeout(startTimeout);
-      console.error(err);
-      statusEl.innerText = "❌ AR failed: " + err.message;
-    }
+    document.querySelector("[mindar-image-target]").addEventListener("targetFound", ()=>{
+      loadAllDishes();
+    });
 
   });
 
+};
+
+function loadAllDishes(){
+
+  const container = document.getElementById("model-container");
+  container.innerHTML = "";
+
+  const spacing = 0.35;
+  const cols = 3;
+
+  DISHES.forEach((dish, i) => {
+
+    const ext = isIOS ? 'usdz' : 'glb';
+    const src = `${ASSETS_BASE}/${dish.folder}/${dish.file}.${ext}`;
+
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+
+    const x = (col - 1) * spacing;
+    const z = -row * spacing;
+
+    const e = document.createElement("a-entity");
+
+    e.setAttribute("gltf-model", src);
+    e.setAttribute("scale", `${dish.scale} ${dish.scale} ${dish.scale}`);
+    e.setAttribute("position", `${x} 0 ${z}`);
+
+    e.setAttribute("animation__float",
+      `property: position; from: ${x} 0 ${z}; to: ${x} 0.05 ${z};
+       dir: alternate; dur: 2000; loop: true;`
+    );
+
+    e.setAttribute("animation__spin",
+      "property: rotation; to: 0 360 0; loop: true; dur: 12000"
+    );
+
+    e.addEventListener("model-error", () => {
+      console.warn("Missing model:", src);
+    });
+
+    container.appendChild(e);
+  });
 }
 </script>
 
