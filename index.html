@@ -1,715 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>Japanese Cuisine — AR Menu</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Japanese Cuisine — AR Menu</title>
 
-  <!-- Fonts only — NO A-Frame/MindAR yet. They load after user taps. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet"/>
-
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --ink:       #0f0a04;
-      --washi:     #f6edde;
-      --crimson:   #8b1a1a;
-      --crimson-lt:#c8312a;
-      --gold:      #9a7820;
-      --gold-lt:   #c4a030;
-      --gold-pale: #e8d080;
-      --sage:      #3d6b35;
-      --sage-lt:   #d0e8c0;
-    }
-
-    html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      background: var(--ink);
-      font-family: 'Noto Sans JP', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* ══════ SPLASH ══════ */
-    #splash {
-      position: fixed; inset: 0; z-index: 9999;
-      background: linear-gradient(160deg, #0f0a04 0%, #1e1208 50%, #0f0a04 100%);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 2rem;
-      transition: opacity 0.5s ease;
-    }
-    #splash.fade-out { opacity: 0; pointer-events: none; }
-
-    #splash::before {
-      content: ''; position: absolute; inset: 0; pointer-events: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='40' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='0' cy='40' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='40' cy='40' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='10' cy='20' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='30' cy='20' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3C/svg%3E");
-      opacity: 0.06;
-    }
-    #splash::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 70% 50% at 25% 75%, rgba(139,26,26,0.22) 0%, transparent 65%),
-        radial-gradient(ellipse 50% 70% at 75% 25%, rgba(154,120,32,0.16) 0%, transparent 60%);
-    }
-
-    .splash-inner {
-      position: relative; z-index: 2;
-      display: flex; flex-direction: column;
-      align-items: center; text-align: center;
-    }
-
-    .mon {
-      width: 76px; height: 76px;
-      border: 1.5px solid rgba(196,160,48,0.38);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 20px;
-      animation: monSpin 18s linear infinite;
-    }
-    .mon::before {
-      content: '✿'; font-size: 34px; color: var(--crimson-lt);
-      animation: monSpin 18s linear infinite reverse;
-    }
-    @keyframes monSpin { to { transform: rotate(360deg); } }
-
-    .s-kanji {
-      font-family: 'Noto Serif JP', serif; font-size: 10px;
-      letter-spacing: 10px; color: rgba(245,237,224,0.28); margin-bottom: 10px;
-    }
-    .s-title {
-      font-family: 'Cinzel', serif;
-      font-size: clamp(26px, 7.5vw, 48px); font-weight: 700;
-      letter-spacing: 0.1em; line-height: 1;
-      background: linear-gradient(160deg, #f6edde 30%, var(--gold-pale) 65%, #f6edde 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      margin-bottom: 5px;
-    }
-    .s-jp {
-      font-family: 'Noto Serif JP', serif;
-      font-size: clamp(11px, 3.5vw, 17px); font-weight: 300;
-      color: rgba(245,237,224,0.38); letter-spacing: 0.4em; margin-bottom: 22px;
-    }
-    .s-divider {
-      width: 80px; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--crimson-lt), transparent);
-      margin: 0 auto 20px;
-    }
-    .s-tagline {
-      font-family: 'Cinzel', serif; font-size: 9.5px;
-      letter-spacing: 3px; color: rgba(245,237,224,0.28);
-      text-transform: uppercase; margin-bottom: 28px;
-    }
-    .s-steps {
-      background: rgba(245,237,224,0.04);
-      border: 1px solid rgba(196,160,48,0.14);
-      padding: 13px 18px; margin-bottom: 26px; max-width: 300px;
-    }
-    .s-steps p {
-      font-size: 11px; line-height: 2.1;
-      color: rgba(245,237,224,0.44); letter-spacing: 0.3px;
-    }
-    .s-steps strong { color: var(--gold-lt); font-weight: 500; }
-
-    #start-btn {
-      background: var(--crimson); color: var(--washi);
-      border: none; padding: 15px 44px;
-      font-family: 'Cinzel', serif; font-size: 12px; font-weight: 600;
-      letter-spacing: 3px; text-transform: uppercase;
-      cursor: pointer; min-height: 52px;
-      box-shadow: 0 6px 26px rgba(139,26,26,0.55);
-      transition: transform 0.12s, opacity 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    #start-btn:active { transform: scale(0.95); }
-    #start-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-
-    .btn-spinner {
-      display: none; width: 14px; height: 14px;
-      border: 2px solid rgba(245,237,224,0.25); border-top-color: var(--washi);
-      border-radius: 50%; animation: spin 0.75s linear infinite; flex-shrink: 0;
-    }
-    #start-btn.loading .btn-spinner { display: block; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    #err-msg {
-      display: none; margin-top: 14px; padding: 10px 14px;
-      background: rgba(200,49,42,0.12); border: 1px solid rgba(200,49,42,0.32);
-      font-size: 11px; line-height: 1.85;
-      color: rgba(245,237,224,0.55); max-width: 290px; text-align: center;
-    }
-    #err-msg.show { display: block; }
-
-    /* ══════ INIT OVERLAY ══════ */
-    #init-overlay {
-      position: fixed; inset: 0; z-index: 8888;
-      background: #0f0a04;
-      display: none; flex-direction: column;
-      align-items: center; justify-content: center; gap: 22px;
-    }
-    #init-overlay.show { display: flex; }
-
-    .init-mon {
-      width: 58px; height: 58px;
-      border: 1.5px solid rgba(196,160,48,0.3); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      animation: monSpin 10s linear infinite;
-    }
-    .init-mon::before {
-      content: '✿'; font-size: 26px; color: var(--crimson-lt);
-      animation: monSpin 10s linear infinite reverse;
-    }
-    .init-text {
-      font-family: 'Cinzel', serif; font-size: 11px;
-      letter-spacing: 3.5px; color: rgba(245,237,224,0.38);
-      animation: fadePulse 1.8s ease-in-out infinite;
-    }
-    @keyframes fadePulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
-
-    /* ══════ AR WRAP ══════ */
-    #ar-wrap {
-      position: fixed; inset: 0; z-index: 10;
-      display: none;
-    }
-    #ar-wrap.show { display: block; }
-
-    /* Force A-Frame canvas to fill screen */
-    #ar-wrap a-scene,
-    #ar-wrap a-scene canvas {
-      position: fixed !important;
-      top: 0 !important; left: 0 !important;
-      width: 100% !important; height: 100% !important;
-    }
-
-    /* ══════ AR UI ══════ */
-    #ar-ui {
-      position: fixed; inset: 0; z-index: 500;
-      display: none; flex-direction: column;
-      justify-content: space-between; pointer-events: none;
-    }
-    #ar-ui.show { display: flex; }
-
-    #topbar {
-      pointer-events: auto;
-      background: linear-gradient(180deg, rgba(5,2,0,0.92) 0%, transparent 100%);
-      padding: 14px 16px 32px;
-      display: flex; align-items: flex-start; justify-content: space-between;
-    }
-    .tb-title {
-      font-family: 'Cinzel', serif; font-size: 16px;
-      font-weight: 600; letter-spacing: 0.08em; color: var(--washi);
-    }
-    .tb-jp {
-      font-family: 'Noto Serif JP', serif; font-size: 9px;
-      color: rgba(245,237,224,0.35); letter-spacing: 3px; margin-top: 2px;
-    }
-    #marker-pill {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(5,2,0,0.78); border: 1px solid rgba(196,160,48,0.16);
-      padding: 5px 12px;
-      font-family: 'Noto Sans JP', sans-serif; font-size: 9px;
-      letter-spacing: 1.5px; color: rgba(245,237,224,0.44);
-    }
-    .m-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: rgba(245,237,224,0.18); flex-shrink: 0;
-      transition: background 0.3s, box-shadow 0.3s;
-    }
-    .m-dot.on { background: #4caf50; box-shadow: 0 0 7px rgba(76,175,80,0.65); }
-
-    /* Scan frame */
-    #scan-frame {
-      position: absolute; top: 44%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(260px, 70vw); height: min(155px, 42vw);
-      pointer-events: none; transition: opacity 0.4s;
-    }
-    #scan-frame.hide { opacity: 0; }
-    .sf-c { position: absolute; width: 18px; height: 18px; border-color: rgba(196,160,48,0.62); border-style: solid; }
-    .sf-c.tl { top:0;left:0;    border-width:2px 0 0 2px; }
-    .sf-c.tr { top:0;right:0;   border-width:2px 2px 0 0; }
-    .sf-c.bl { bottom:0;left:0; border-width:0 0 2px 2px; }
-    .sf-c.br { bottom:0;right:0;border-width:0 2px 2px 0; }
-    .sf-label {
-      position: absolute; bottom: -22px; left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Cinzel', serif; font-size: 8px;
-      letter-spacing: 2.5px; color: rgba(196,160,48,0.5);
-      white-space: nowrap; animation: fadePulse 2.2s ease-in-out infinite;
-    }
-
-    /* Dish panel */
-    #dish-panel {
-      pointer-events: auto;
-      background: linear-gradient(0deg, rgba(5,2,0,0.97) 0%, rgba(5,2,0,0.88) 72%, transparent 100%);
-      padding: 22px 10px 16px;
-    }
-    .dp-header {
-      display: flex; align-items: center; gap: 9px;
-      margin-bottom: 9px; padding: 0 2px;
-    }
-    .dp-label {
-      font-family: 'Cinzel', serif; font-size: 8px;
-      letter-spacing: 3px; color: var(--gold-lt);
-      text-transform: uppercase; white-space: nowrap;
-    }
-    .dp-line { flex:1; height:1px; background: linear-gradient(90deg,rgba(196,160,48,0.28),transparent); }
-
-    #dish-grid {
-      display: grid; grid-template-columns: repeat(3,1fr);
-      gap: 6px; max-height: 205px;
-      overflow-y: auto; overflow-x: hidden;
-      scrollbar-width: thin; scrollbar-color: rgba(139,26,26,0.35) transparent;
-    }
-    #dish-grid::-webkit-scrollbar { width: 3px; }
-    #dish-grid::-webkit-scrollbar-thumb { background: rgba(139,26,26,0.35); border-radius:2px; }
-
-    .dc {
-      background: rgba(245,237,224,0.055); border: 1px solid rgba(245,237,224,0.07);
-      padding: 8px 4px 7px;
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      cursor: pointer; position: relative; overflow: hidden;
-      transition: background 0.16s, border-color 0.16s, transform 0.1s;
-      touch-action: manipulation;
-    }
-    .dc:active { transform: scale(0.93); }
-    .dc.active { border-color: var(--crimson-lt); background: rgba(139,26,26,0.2); }
-    .dc-veg {
-      position: absolute; top:3px; right:3px;
-      width:8px; height:8px; border-radius:50%;
-      background: var(--sage); border:1px solid var(--sage-lt);
-    }
-    .dc-emoji { font-size: 22px; line-height:1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-    .dc.active .dc-emoji { animation: floatE 1.8s ease-in-out infinite; }
-    @keyframes floatE { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-    .dc-name { font-family: 'Noto Serif JP', serif; font-size: 8.5px; color: rgba(245,237,224,0.72); text-align:center; line-height:1.3; }
-    .dc-price { font-family: 'Cormorant Garamond', serif; font-size: 11px; font-weight:600; color: var(--gold-lt); }
-
-    /* Toasts */
-    .toast {
-      position: fixed; left:50%; z-index:700; pointer-events:none;
-      transform: translateX(-50%) translateY(-10px);
-      opacity:0; transition: opacity 0.28s, transform 0.28s;
-      white-space: nowrap;
-    }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-
-    #toast-placed {
-      top: 72px;
-      background: rgba(5,2,0,0.92); border: 1px solid var(--gold);
-      padding: 6px 16px;
-      font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:var(--gold-pale);
-    }
-    #toast-loader {
-      bottom: 230px;
-      background: rgba(5,2,0,0.88); border: 1px solid rgba(196,160,48,0.18);
-      padding: 6px 14px; display:flex; align-items:center; gap:8px;
-    }
-    .tl-spin {
-      width:11px; height:11px;
-      border:2px solid rgba(196,160,48,0.18); border-top-color:var(--gold-lt);
-      border-radius:50%; animation:spin 0.75s linear infinite; flex-shrink:0;
-    }
-    .tl-text { font-family:'Cinzel',serif; font-size:8.5px; letter-spacing:2px; color:rgba(245,237,224,0.42); }
-
-    #toast-point {
-      top: 44%; text-align:center;
-      background:rgba(5,2,0,0.82); border:1px solid rgba(196,160,48,0.2);
-      padding: 12px 20px;
-    }
-    .tp-icon { font-size:30px; display:block; margin-bottom:7px; }
-    .tp-text { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:rgba(245,237,224,0.42); line-height:2; }
-  </style>
+<style>
+body {
+  margin:0;
+  background:#000;
+  font-family:sans-serif;
+}
+#start-btn {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  padding:16px 30px;
+  font-size:16px;
+  background:#8b1a1a;
+  color:#fff;
+  border:none;
+}
+#status {
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  color:#fff;
+}
+</style>
 </head>
+
 <body>
 
-<!-- SPLASH — loads instantly, zero heavy JS -->
-<div id="splash">
-  <div class="splash-inner">
-    <div class="mon"></div>
-    <p class="s-kanji">日本料理</p>
-    <h1 class="s-title">Japanese Cuisine</h1>
-    <span class="s-jp">日本料理</span>
-    <div class="s-divider"></div>
-    <p class="s-tagline">AR Business Card Experience</p>
-    <div class="s-steps">
-      <p>
-        <strong>① Tap Start</strong> — allow camera access<br>
-        <strong>② Point camera</strong> at your business card<br>
-        <strong>③ First dish</strong> appears on card automatically<br>
-        <strong>④ Tap any dish</strong> below to switch
-      </p>
-    </div>
-    <button id="start-btn">
-      <div class="btn-spinner"></div>
-      <span id="btn-label">✦ &nbsp;Start AR Experience&nbsp; ✦</span>
-    </button>
-    <div id="err-msg"></div>
-  </div>
-</div>
+<button id="start-btn">Start AR</button>
+<div id="status">Waiting...</div>
 
-<!-- INIT OVERLAY — shown while scripts download + camera boots -->
-<div id="init-overlay">
-  <div class="init-mon"></div>
-  <div class="init-text" id="init-text">Starting…</div>
-</div>
-
-<!-- AR SCENE injected here by JS after permission granted -->
-<div id="ar-wrap"></div>
-
-<!-- AR UI OVERLAY -->
-<div id="ar-ui">
-  <div id="topbar">
-    <div>
-      <div class="tb-title">Japanese Cuisine</div>
-      <div class="tb-jp">日本料理 · AR Menu</div>
-    </div>
-    <div id="marker-pill">
-      <div class="m-dot" id="m-dot"></div>
-      <span id="m-text">Scanning…</span>
-    </div>
-  </div>
-
-  <div id="scan-frame">
-    <div class="sf-c tl"></div><div class="sf-c tr"></div>
-    <div class="sf-c bl"></div><div class="sf-c br"></div>
-    <div class="sf-label">Point at business card</div>
-  </div>
-
-  <div id="dish-panel">
-    <div class="dp-header">
-      <span class="dp-label">Select a Dish</span>
-      <div class="dp-line"></div>
-      <span class="dp-label">選択</span>
-    </div>
-    <div id="dish-grid"></div>
-  </div>
-</div>
-
-<!-- Toasts -->
-<div class="toast" id="toast-placed">✦ Placed on card</div>
-<div class="toast" id="toast-loader"><div class="tl-spin"></div><span class="tl-text">Loading model…</span></div>
-<div class="toast" id="toast-point">
-  <span class="tp-icon">🎴</span>
-  <div class="tp-text">Point camera at<br><strong style="color:rgba(196,160,48,0.8)">business card</strong></div>
-</div>
+<div id="ar-wrap" style="display:none;"></div>
 
 <script>
-/* ═══════════════════════════════════
-   DISH DATA
-═══════════════════════════════════ */
-const ASSETS_BASE = '3d-model';
-const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const statusEl = document.getElementById("status");
+const btn = document.getElementById("start-btn");
 
-const DISHES = [
-  { id:'gyoza',         name:'Gyoza',           emoji:'🥟', price:180, veg:false, folder:'Gyoza',           file:'Gyoza',          scale:0.3  },
-  { id:'edamame',       name:'Edamame',          emoji:'🫘', price:120, veg:true,  folder:'Edamame',          file:'Edamame',        scale:0.06 },
-  { id:'karaage',       name:'Karaage',          emoji:'🍗', price:220, veg:false, folder:'Karaage',          file:'Karaage',        scale:0.15 },
-  { id:'miso-soup',     name:'Miso Soup',        emoji:'🍵', price:90,  veg:true,  folder:'Miso-Soup',        file:'Miso-Soup',      scale:0.3  },
-  { id:'takoyaki',      name:'Takoyaki',         emoji:'🐙', price:160, veg:false, folder:'Takoyaki',         file:'Takoyaki',       scale:0.5  },
-  { id:'agedashi-tofu', name:'Agedashi Tofu',    emoji:'🫕', price:170, veg:true,  folder:'Agedashi-Tofu',    file:'Agedashi-Tofu',  scale:0.15 },
-  { id:'ramen',         name:'Ramen',            emoji:'🍜', price:320, veg:false, folder:'Ramen',            file:'Ramen',          scale:0.2  },
-  { id:'salmon',        name:'Salmon Sashimi',   emoji:'🐟', price:280, veg:false, folder:'Salmon-Sashimi',   file:'Salmon-Sashimi', scale:0.3  },
-  { id:'tempura',       name:'Tempura',          emoji:'🍤', price:240, veg:false, folder:'Tempura',          file:'Tempura',        scale:0.3  },
-  { id:'matcha',        name:'Matcha Ice Cream', emoji:'🍦', price:130, veg:true,  folder:'Matcha-Ice-Cream', file:'Matcha-Ice-Cream',scale:0.3 },
-];
-
-let activeDishId  = null;
-let markerVisible = false;
-let noMarkerTimer = null;
-const toastTimers = {};
-
-/* ═══════════════════════════════════
-   STEP 1 — START BUTTON CLICK
-   Ask camera permission, then load
-   A-Frame + MindAR scripts dynamically
-═══════════════════════════════════ */
-document.getElementById('start-btn').addEventListener('click', async () => {
-  const btn   = document.getElementById('start-btn');
-  const label = document.getElementById('btn-label');
-  const err   = document.getElementById('err-msg');
+btn.onclick = async () => {
 
   btn.disabled = true;
-  btn.classList.add('loading');
-  label.textContent = 'Requesting camera…';
-  err.classList.remove('show');
+  statusEl.innerText = "Requesting camera...";
 
-  /* 1a. Explicit camera permission prompt */
-  let stream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
-    });
-  } catch (e) {
+    const stream = await navigator.mediaDevices.getUserMedia({ video:true });
+    stream.getTracks().forEach(t => t.stop());
+  } catch(e){
+    statusEl.innerText = "❌ Camera permission denied";
     btn.disabled = false;
-    btn.classList.remove('loading');
-    label.textContent = '✦ Start AR Experience ✦';
-    err.innerHTML = '⚠ Camera access denied.<br>Enable camera in your browser settings and reload.';
-    err.classList.add('show');
     return;
   }
 
-  /* Stop test stream — MindAR will open camera itself */
-  stream.getTracks().forEach(t => t.stop());
+  statusEl.innerText = "Loading AR engine...";
 
-  /* Show init overlay */
-  document.getElementById('init-overlay').classList.add('show');
-  document.getElementById('init-text').textContent = 'Loading AR engine…';
-
-  /* 1b. Dynamically load A-Frame then MindAR */
   try {
-    await loadScript('https://aframe.io/releases/1.4.2/aframe.min.js');
-    await loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js');
-  } catch (e) {
-    document.getElementById('init-overlay').classList.remove('show');
+    await loadScript("https://aframe.io/releases/1.4.2/aframe.min.js");
+    await loadScript("https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js");
+  } catch(e){
+    statusEl.innerText = "❌ Failed loading AR libs";
     btn.disabled = false;
-    btn.classList.remove('loading');
-    label.textContent = '✦ Retry ✦';
-    err.innerHTML = '⚠ Could not load AR library.<br>Check internet connection and retry.';
-    err.classList.add('show');
     return;
   }
 
-  /* Fade out splash */
-  const splash = document.getElementById('splash');
-  splash.classList.add('fade-out');
-  splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+  startAR();
+};
 
-  buildDishGrid();
-
-  /* 1c. Boot the AR scene */
-  document.getElementById('init-text').textContent = 'Starting Camera…';
-  bootAR();
-});
-
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    const s   = document.createElement('script');
-    s.src     = src;
-    s.async   = false;          // preserve execution order
-    s.onload  = resolve;
-    s.onerror = () => reject(new Error('Script load failed: ' + src));
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement("script");
+    s.src=src;
+    s.onload=res;
+    s.onerror=rej;
     document.head.appendChild(s);
   });
 }
 
-/* ═══════════════════════════════════
-   STEP 2 — INJECT A-FRAME SCENE & START MINDAR
-═══════════════════════════════════ */
-function bootAR() {
-  const wrap = document.getElementById('ar-wrap');
-  wrap.classList.add('show');
+function startAR(){
 
-  /* Build scene HTML string and inject */
-  wrap.innerHTML = `
+  document.getElementById("ar-wrap").style.display="block";
+  btn.style.display="none";
+
+  document.getElementById("ar-wrap").innerHTML = `
     <a-scene
-      id="ar-scene"
-      mindar-image="imageTargetSrc: targets/card.mind;
-                    autoStart: false;
-                    uiLoading: no; uiScanning: no; uiError: no;
-                    filterMinCF: 0.001; filterBeta: 1000;"
-      color-space="sRGB"
-      renderer="colorManagement: true; physicallyCorrectLights: true;"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
+      id="scene"
+      mindar-image="imageTargetSrc: targets/card.mind;; autoStart:false;"
+      vr-mode-ui="enabled:false"
+      device-orientation-permission-ui="enabled:false"
       embedded>
 
-      <a-assets id="a-assets" timeout="30000"></a-assets>
+      <a-assets></a-assets>
 
-      <a-entity mindar-image-target="targetIndex: 0" id="ar-target">
-
-        <!-- Subtle shadow under model -->
-        <a-plane rotation="-90 0 0" width="1" height="0.6"
-          color="#000" opacity="0.15"
-          material="transparent: true; depthWrite: false;"></a-plane>
-
-        <!-- Crimson accent ring on card surface -->
-        <a-ring color="#8b1a1a" radius-inner="0.42" radius-outer="0.44"
-          rotation="-90 0 0" opacity="0.4"
-          material="transparent: true;"></a-ring>
-
-        <!-- Gold accent ring -->
-        <a-ring color="#c4a030" radius-inner="0.45" radius-outer="0.46"
-          rotation="-90 0 0" opacity="0.25"
-          material="transparent: true;"></a-ring>
-
-        <!-- 3D model swapped here -->
-        <a-entity id="model-container" position="0 0.05 0"></a-entity>
-
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-box color="red" depth="0.2" height="0.2" width="0.2"></a-box>
       </a-entity>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-      <a-light type="ambient"     color="#ffffff" intensity="0.7"></a-light>
-      <a-light type="directional" color="#fff5e0" intensity="1.1" position="1 3 2"></a-light>
-      <a-light type="directional" color="#e0eeff" intensity="0.25" position="-2 1 -1"></a-light>
+      <a-camera position="0 0 0"></a-camera>
     </a-scene>
   `;
 
-  const scene    = document.getElementById('ar-scene');
-  const arTarget = document.getElementById('ar-target');
+  const scene = document.querySelector("#scene");
 
-  const onSceneLoaded = () => {
-    const sys = scene.systems['mindar-image-system'];
-    if (!sys) {
-      console.error('mindar-image-system not found');
+  const startTimeout = setTimeout(()=>{
+    statusEl.innerText = "⚠️ Taking too long... check .mind file";
+  },8000);
+
+  scene.addEventListener("loaded", async () => {
+
+    const sys = scene.systems["mindar-image-system"];
+
+    if(!sys){
+      statusEl.innerText = "❌ MindAR system missing";
       return;
     }
 
-    sys.start()
-      .then(() => {
-        /* Camera is now live */
-        document.getElementById('init-overlay').classList.remove('show');
-        document.getElementById('ar-ui').classList.add('show');
+    try {
+      await sys.start();
+      clearTimeout(startTimeout);
+      statusEl.innerText = "✅ Camera started";
+      console.log("AR started successfully");
 
-        /* Marker tracking events */
-        arTarget.addEventListener('targetFound', onMarkerFound);
-        arTarget.addEventListener('targetLost',  onMarkerLost);
-      })
-      .catch(err => {
-        console.error('MindAR start error:', err);
-        document.getElementById('init-overlay').classList.remove('show');
-        alert('Camera failed to start. Please reload and allow camera access.');
-      });
-  };
+    } catch(err){
+      clearTimeout(startTimeout);
+      console.error(err);
+      statusEl.innerText = "❌ AR failed: " + err.message;
+    }
 
-  if (scene.hasLoaded) { onSceneLoaded(); }
-  else { scene.addEventListener('loaded', onSceneLoaded, { once: true }); }
-}
-
-/* ═══════════════════════════════════
-   MARKER EVENTS
-═══════════════════════════════════ */
-function onMarkerFound() {
-  markerVisible = true;
-  document.getElementById('m-dot').classList.add('on');
-  document.getElementById('m-text').textContent = 'Card detected ✓';
-  document.getElementById('scan-frame').classList.add('hide');
-  hideToast('toast-point');
-  clearTimeout(noMarkerTimer);
-
-  /* Auto-load FIRST dish the first time card is seen */
-  if (!activeDishId) {
-    setActiveCard(DISHES[0].id);
-    loadDish(DISHES[0]);
-  }
-}
-
-function onMarkerLost() {
-  markerVisible = false;
-  document.getElementById('m-dot').classList.remove('on');
-  document.getElementById('m-text').textContent = 'Scanning…';
-  document.getElementById('scan-frame').classList.remove('hide');
-}
-
-/* ═══════════════════════════════════
-   DISH GRID
-═══════════════════════════════════ */
-function buildDishGrid() {
-  document.getElementById('dish-grid').innerHTML = DISHES.map(d => `
-    <div class="dc" data-id="${d.id}" onclick="onDishTap('${d.id}')">
-      ${d.veg ? '<div class="dc-veg"></div>' : ''}
-      <div class="dc-emoji">${d.emoji}</div>
-      <div class="dc-name">${d.name}</div>
-      <div class="dc-price">₹${d.price}</div>
-    </div>`
-  ).join('');
-}
-
-function setActiveCard(id) {
-  document.querySelectorAll('.dc').forEach(c =>
-    c.classList.toggle('active', c.dataset.id === id)
-  );
-}
-
-/* ═══════════════════════════════════
-   DISH TAP
-═══════════════════════════════════ */
-function onDishTap(id) {
-  if (id === activeDishId) return;
-  setActiveCard(id);
-  if (!markerVisible) { showToast('toast-point', 3000); }
-  const dish = DISHES.find(d => d.id === id);
-  if (dish) loadDish(dish);
-}
-
-/* ═══════════════════════════════════
-   LOAD / SWAP 3D MODEL
-═══════════════════════════════════ */
-function loadDish(dish) {
-  activeDishId = dish.id;
-  showToast('toast-loader', 30000);   // hide when loaded
-
-  const container = document.getElementById('model-container');
-  if (!container) return;
-
-  /* Remove previous */
-  const old = document.getElementById('active-model');
-  if (old) old.remove();
-
-  const ext = isIOS ? 'usdz' : 'glb';
-  const src = `${ASSETS_BASE}/${dish.folder}/${dish.file}.${ext}`;
-
-  const entity  = document.createElement('a-entity');
-  entity.id     = 'active-model';
-  entity.setAttribute('gltf-model', src);
-  entity.setAttribute('scale',    `${dish.scale} ${dish.scale} ${dish.scale}`);
-  entity.setAttribute('position', '0 0 0');
-  entity.setAttribute('rotation', '0 0 0');
-
-  /* Float animation */
-  entity.setAttribute('animation__float',
-    'property:position; from:0 0 0; to:0 0.06 0; ' +
-    'dir:alternate; dur:1900; easing:easeInOutSine; loop:true;');
-
-  /* Slow spin */
-  entity.setAttribute('animation__spin',
-    'property:rotation; from:0 0 0; to:0 360 0; ' +
-    'dur:10000; easing:linear; loop:true;');
-
-  entity.addEventListener('model-loaded', () => {
-    hideToast('toast-loader');
-    showToast('toast-placed', 2200);
   });
 
-  entity.addEventListener('model-error', () => {
-    console.warn('GLB missing:', src, '→ emoji fallback');
-    hideToast('toast-loader');
-    entity.remove();
-    showEmojiFallback(dish, container);
-  });
-
-  container.appendChild(entity);
-}
-
-/* Emoji fallback when GLB is missing */
-function showEmojiFallback(dish, container) {
-  const old = document.getElementById('active-model');
-  if (old) old.remove();
-  const e = document.createElement('a-entity');
-  e.id = 'active-model';
-  e.setAttribute('text', `value:${dish.emoji}; align:center; width:0.6; color:#f6edde;`);
-  e.setAttribute('position', '0 0.12 0');
-  e.setAttribute('animation__float',
-    'property:position; from:0 0.1 0; to:0 0.18 0; ' +
-    'dir:alternate; dur:1900; easing:easeInOutSine; loop:true;');
-  container.appendChild(e);
-}
-
-/* ═══════════════════════════════════
-   TOAST HELPERS
-═══════════════════════════════════ */
-function showToast(id, ms) {
-  clearTimeout(toastTimers[id]);
-  document.getElementById(id).classList.add('show');
-  if (ms < 30000) toastTimers[id] = setTimeout(() => hideToast(id), ms);
-}
-function hideToast(id) {
-  clearTimeout(toastTimers[id]);
-  document.getElementById(id).classList.remove('show');
 }
 </script>
+
 </body>
 </html>
