@@ -5,163 +5,210 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>AR Menu — Japanese Cuisine</title>
 
+  <!--
+    KEY FIXES vs previous version:
+    1. Removed manual <video> element — MindARThree manages its own video/canvas
+    2. Using three@0.136.0 (the version MindAR 1.2.5 was built against)
+    3. GLTFLoader from the correct r136 path
+    4. mindar-image-three loaded AFTER three.js is confirmed ready
+    5. No camera pre-request — MindARThree.start() handles it internally
+  -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;500&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --ink:     #0d0a06;
       --washi:   #f6ede0;
       --crimson: #8b1a1a;
-      --gold:    #b8860b;
       --gold-lt: #e0b830;
       --glass:   rgba(10,6,2,0.78);
     }
     html, body {
-      width:100%; height:100%; overflow:hidden;
-      background:#000; font-family:'Noto Sans JP',sans-serif;
-      -webkit-tap-highlight-color:transparent; user-select:none;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #0d0a06;
+      font-family: 'Noto Sans JP', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
-    /* LOADING */
+    /* MindAR injects its own canvas + video into body — let them fill the screen */
+    body > canvas,
+    body > video {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      z-index: 1 !important;
+    }
+
+    /* ── LOADING ── */
     #loading-screen {
-      position:fixed; inset:0; z-index:100;
-      background:#0d0a06;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:16px;
-      transition:opacity 0.6s;
+      position: fixed; inset: 0; z-index: 100;
+      background: #0d0a06;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      transition: opacity 0.6s;
     }
-    #loading-screen.fade-out { opacity:0; pointer-events:none; }
+    #loading-screen.fade-out { opacity: 0; pointer-events: none; }
     .ld-mon {
-      width:60px; height:60px;
-      border:1.5px solid rgba(184,134,11,0.4); border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      font-size:28px; animation:spin 4s linear infinite;
+      width: 60px; height: 60px;
+      border: 1.5px solid rgba(184,134,11,0.4); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; animation: spin 4s linear infinite;
     }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .ld-title { font-family:'Cinzel',serif; font-size:20px; font-weight:600; letter-spacing:5px; color:var(--washi); }
-    .ld-sub   { font-size:10px; letter-spacing:4px; color:rgba(246,237,224,0.3); }
-    .ld-bar-wrap { width:180px; height:2px; background:rgba(184,134,11,0.15); overflow:hidden; }
-    .ld-bar { height:100%; width:0%; background:linear-gradient(90deg,var(--crimson),var(--gold-lt)); transition:width 0.4s; }
-    .ld-msg  { font-size:10px; letter-spacing:2px; color:rgba(246,237,224,0.35); min-height:14px; text-align:center; padding:0 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ld-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 600; letter-spacing: 5px; color: var(--washi); }
+    .ld-sub   { font-size: 10px; letter-spacing: 4px; color: rgba(246,237,224,0.3); }
+    .ld-bar-wrap { width: 180px; height: 2px; background: rgba(184,134,11,0.15); overflow: hidden; }
+    .ld-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--crimson), var(--gold-lt)); transition: width 0.4s; }
+    .ld-msg { font-size: 10px; letter-spacing: 2px; color: rgba(246,237,224,0.35); min-height: 14px; text-align: center; padding: 0 1.5rem; }
 
-    /* ERROR */
+    /* ── ERROR ── */
     #error-screen {
-      display:none; position:fixed; inset:0; z-index:200;
-      background:#0d0a06; flex-direction:column;
-      align-items:center; justify-content:center;
-      gap:14px; text-align:center; padding:2rem;
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: #0d0a06; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; text-align: center; padding: 2rem;
     }
-    #error-screen h2 { font-family:'Cinzel',serif; font-size:16px; letter-spacing:3px; color:var(--crimson); }
-    #error-screen p  { font-size:12px; letter-spacing:1px; color:rgba(246,237,224,0.45); line-height:1.9; max-width:300px; }
-    #error-screen code { background:rgba(246,237,224,0.08); padding:2px 8px; font-size:11px; color:var(--gold-lt); }
-    #retry-btn { margin-top:8px; background:var(--crimson); color:var(--washi); border:none; padding:12px 28px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:2px; cursor:pointer; }
+    #error-screen h2 { font-family: 'Cinzel', serif; font-size: 16px; letter-spacing: 3px; color: var(--crimson); }
+    #error-screen p  { font-size: 12px; letter-spacing: 1px; color: rgba(246,237,224,0.5); line-height: 2; max-width: 300px; }
+    #error-screen code { background: rgba(246,237,224,0.08); padding: 2px 8px; font-size: 11px; color: var(--gold-lt); }
+    #retry-btn {
+      margin-top: 8px; background: var(--crimson); color: var(--washi);
+      border: none; padding: 12px 28px;
+      font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; cursor: pointer;
+    }
 
-    /* VIDEO */
-    #video-feed { position:fixed; inset:0; z-index:1; width:100%; height:100%; object-fit:cover; display:none; }
-
-    /* TOP BAR */
+    /* ── TOP BAR ── */
     #top-bar {
-      position:fixed; top:0; left:0; right:0; z-index:10;
-      padding:14px 16px;
-      display:flex; align-items:flex-start; justify-content:space-between;
-      pointer-events:none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      padding: 14px 16px;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      pointer-events: none;
     }
     .brand-block {
-      background:var(--glass); border:1px solid rgba(184,134,11,0.28);
-      padding:8px 16px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      background: var(--glass); border: 1px solid rgba(184,134,11,0.28);
+      padding: 8px 16px;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     }
-    .brand-en { font-family:'Cinzel',serif; font-size:13px; font-weight:600; letter-spacing:3px; color:var(--washi); }
-    .brand-jp { font-size:9px; letter-spacing:4px; color:rgba(246,237,224,0.35); margin-top:2px; }
+    .brand-en { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 600; letter-spacing: 3px; color: var(--washi); }
+    .brand-jp { font-size: 9px; letter-spacing: 4px; color: rgba(246,237,224,0.35); margin-top: 2px; }
     .status-badge {
-      background:var(--glass); border:1px solid rgba(184,134,11,0.22);
-      padding:7px 12px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-      display:flex; align-items:center; gap:7px;
-      font-size:9px; letter-spacing:1.5px; color:rgba(246,237,224,0.55);
+      background: var(--glass); border: 1px solid rgba(184,134,11,0.22);
+      padding: 7px 12px;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      display: flex; align-items: center; gap: 7px;
+      font-size: 9px; letter-spacing: 1.5px; color: rgba(246,237,224,0.55);
     }
-    .s-dot { width:7px; height:7px; border-radius:50%; background:var(--gold-lt); animation:blink 1.5s ease-in-out infinite; flex-shrink:0; }
-    .s-dot.ok { background:#4caf50; animation:none; }
+    .s-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold-lt); animation: blink 1.5s ease-in-out infinite; flex-shrink: 0; }
+    .s-dot.ok { background: #4caf50; animation: none; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
 
-    /* SCAN FRAME */
+    /* ── SCAN FRAME ── */
     #scan-frame {
-      position:fixed; top:42%; left:50%; transform:translate(-50%,-50%);
-      width:min(75vw,320px); aspect-ratio:1.75;
-      z-index:10; pointer-events:none; transition:opacity 0.5s;
+      position: fixed; top: 42%; left: 50%; transform: translate(-50%, -50%);
+      width: min(75vw, 320px); aspect-ratio: 1.75;
+      z-index: 50; pointer-events: none; transition: opacity 0.5s;
     }
-    #scan-frame .c { position:absolute; width:24px; height:24px; border-color:rgba(224,184,48,0.75); border-style:solid; }
-    #scan-frame .c.tl { top:0;left:0; border-width:2px 0 0 2px; }
-    #scan-frame .c.tr { top:0;right:0; border-width:2px 2px 0 0; }
-    #scan-frame .c.bl { bottom:0;left:0; border-width:0 0 2px 2px; }
-    #scan-frame .c.br { bottom:0;right:0; border-width:0 2px 2px 0; }
-    #scan-hint { position:absolute; bottom:-26px; left:50%; transform:translateX(-50%); font-size:9px; letter-spacing:2.5px; color:rgba(246,237,224,0.45); white-space:nowrap; font-family:'Cinzel',serif; }
-    #scan-line { position:absolute; left:4px; right:4px; height:1px; background:linear-gradient(90deg,transparent,var(--gold-lt),transparent); top:0; animation:scanMove 2.2s ease-in-out infinite; }
+    #scan-frame .c { position: absolute; width: 24px; height: 24px; border-color: rgba(224,184,48,0.75); border-style: solid; }
+    #scan-frame .c.tl { top:0; left:0; border-width: 2px 0 0 2px; }
+    #scan-frame .c.tr { top:0; right:0; border-width: 2px 2px 0 0; }
+    #scan-frame .c.bl { bottom:0; left:0; border-width: 0 0 2px 2px; }
+    #scan-frame .c.br { bottom:0; right:0; border-width: 0 2px 2px 0; }
+    #scan-hint {
+      position: absolute; bottom: -26px; left: 50%; transform: translateX(-50%);
+      font-size: 9px; letter-spacing: 2.5px;
+      color: rgba(246,237,224,0.45); white-space: nowrap;
+      font-family: 'Cinzel', serif;
+    }
+    #scan-line {
+      position: absolute; left: 4px; right: 4px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-lt), transparent);
+      top: 0; animation: scanMove 2.2s ease-in-out infinite;
+    }
     @keyframes scanMove { 0%{top:0%;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
 
-    /* BOTTOM PANEL */
+    /* ── BOTTOM PANEL ── */
     #bottom-panel {
-      position:fixed; bottom:0; left:0; right:0; z-index:10;
-      padding-bottom:max(env(safe-area-inset-bottom),12px);
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      padding-bottom: max(env(safe-area-inset-bottom), 12px);
     }
-    .panel-label { padding:0 16px 8px; display:flex; align-items:center; gap:10px; }
-    .panel-label span { font-family:'Cinzel',serif; font-size:9px; letter-spacing:3px; color:rgba(246,237,224,0.4); }
-    .pl-line { flex:1; height:1px; background:linear-gradient(90deg,rgba(184,134,11,0.25),transparent); }
+    .panel-label { padding: 0 16px 8px; display: flex; align-items: center; gap: 10px; }
+    .panel-label span { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 3px; color: rgba(246,237,224,0.4); }
+    .pl-line { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(184,134,11,0.25), transparent); }
     #dish-row {
-      display:flex; gap:8px; overflow-x:auto; overflow-y:hidden;
-      padding:0 16px 2px; scrollbar-width:none;
-      -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory;
+      display: flex; gap: 8px;
+      overflow-x: auto; overflow-y: hidden;
+      padding: 0 16px 2px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
     }
-    #dish-row::-webkit-scrollbar { display:none; }
+    #dish-row::-webkit-scrollbar { display: none; }
     .d-pill {
-      flex-shrink:0; scroll-snap-align:start;
-      background:var(--glass); border:1px solid rgba(184,134,11,0.18);
-      backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-      padding:9px 14px 9px 10px; display:flex; align-items:center; gap:8px;
-      cursor:pointer; min-width:145px; position:relative;
-      transition:border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      flex-shrink: 0; scroll-snap-align: start;
+      background: var(--glass); border: 1px solid rgba(184,134,11,0.18);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      padding: 9px 14px 9px 10px;
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; min-width: 145px; position: relative;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     }
-    .d-pill.active { border-color:var(--gold-lt); background:rgba(184,134,11,0.2); box-shadow:0 0 20px rgba(184,134,11,0.22); }
-    .d-pill:active { opacity:0.75; }
-    .d-emoji { font-size:26px; line-height:1; flex-shrink:0; }
-    .d-info  { min-width:0; flex:1; }
-    .d-name  { font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:600; color:var(--washi); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .d-jp    { font-size:8px; letter-spacing:2px; color:rgba(246,237,224,0.3); margin-top:1px; }
-    .d-price { position:absolute; top:5px; right:8px; font-family:'Cinzel',serif; font-size:8px; color:var(--gold-lt); letter-spacing:1px; }
+    .d-pill.active { border-color: var(--gold-lt); background: rgba(184,134,11,0.2); box-shadow: 0 0 20px rgba(184,134,11,0.22); }
+    .d-pill:active { opacity: 0.75; }
+    .d-emoji { font-size: 26px; line-height: 1; flex-shrink: 0; }
+    .d-info  { min-width: 0; flex: 1; }
+    .d-name  { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 600; color: var(--washi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .d-jp    { font-size: 8px; letter-spacing: 2px; color: rgba(246,237,224,0.3); margin-top: 1px; }
+    .d-price { position: absolute; top: 5px; right: 8px; font-family: 'Cinzel', serif; font-size: 8px; color: var(--gold-lt); letter-spacing: 1px; }
 
-    /* POPUP */
+    /* ── POPUP ── */
     #info-popup {
-      position:fixed; left:0; right:0; bottom:0; z-index:20;
-      background:rgba(10,6,2,0.93); border-top:1px solid rgba(184,134,11,0.25);
-      padding:16px 18px max(env(safe-area-inset-bottom),20px);
-      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-      transform:translateY(100%); transition:transform 0.32s cubic-bezier(0.22,1,0.36,1);
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+      background: rgba(10,6,2,0.94); border-top: 1px solid rgba(184,134,11,0.25);
+      padding: 16px 18px max(env(safe-area-inset-bottom), 20px);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.22,1,0.36,1);
     }
-    #info-popup.open { transform:translateY(0); }
-    .ip-close { position:absolute; top:12px; right:12px; width:30px; height:30px; background:rgba(139,26,26,0.45); border:1px solid rgba(246,237,224,0.12); color:rgba(246,237,224,0.6); display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; }
-    .ip-name  { font-family:'Cinzel',serif; font-size:18px; font-weight:600; letter-spacing:2px; color:var(--washi); margin-bottom:2px; padding-right:36px; }
-    .ip-jp    { font-size:10px; letter-spacing:3px; color:rgba(246,237,224,0.3); margin-bottom:10px; }
-    .ip-desc  { font-size:12px; line-height:1.75; color:rgba(246,237,224,0.55); border-left:2px solid var(--crimson); padding-left:10px; margin-bottom:12px; }
-    .ip-foot  { display:flex; align-items:center; justify-content:space-between; }
-    .ip-price { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--washi); }
-    .ip-tags  { display:flex; gap:5px; }
-    .i-tag    { font-size:8px; padding:3px 9px; letter-spacing:1px; }
-    .t-veg    { background:rgba(74,103,65,0.3);   color:#8bc34a; border:1px solid rgba(139,195,74,0.3); }
-    .t-new    { background:rgba(139,26,26,0.3);    color:#ef9a9a; border:1px solid rgba(211,47,47,0.3);  }
-    .t-pick   { background:rgba(184,134,11,0.2);   color:var(--gold-lt); border:1px solid rgba(184,134,11,0.3); }
+    #info-popup.open { transform: translateY(0); }
+    .ip-close {
+      position: absolute; top: 12px; right: 12px;
+      width: 30px; height: 30px;
+      background: rgba(139,26,26,0.45); border: 1px solid rgba(246,237,224,0.12);
+      color: rgba(246,237,224,0.6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; cursor: pointer;
+    }
+    .ip-name  { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 600; letter-spacing: 2px; color: var(--washi); margin-bottom: 2px; padding-right: 36px; }
+    .ip-jp    { font-size: 10px; letter-spacing: 3px; color: rgba(246,237,224,0.3); margin-bottom: 10px; }
+    .ip-desc  { font-size: 12px; line-height: 1.75; color: rgba(246,237,224,0.55); border-left: 2px solid var(--crimson); padding-left: 10px; margin-bottom: 12px; }
+    .ip-foot  { display: flex; align-items: center; justify-content: space-between; }
+    .ip-price { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--washi); }
+    .ip-tags  { display: flex; gap: 5px; }
+    .i-tag    { font-size: 8px; padding: 3px 9px; letter-spacing: 1px; }
+    .t-veg    { background: rgba(74,103,65,0.3);  color: #8bc34a; border: 1px solid rgba(139,195,74,0.3); }
+    .t-new    { background: rgba(139,26,26,0.3);   color: #ef9a9a; border: 1px solid rgba(211,47,47,0.3); }
+    .t-pick   { background: rgba(184,134,11,0.2);  color: var(--gold-lt); border: 1px solid rgba(184,134,11,0.3); }
 
-    /* FALLBACK */
-    #model-fallback {
-      display:none; position:fixed; inset:0; z-index:3;
-      background:#0d0a06; flex-direction:column; align-items:center; justify-content:center;
+    /* ── FALLBACK (no AR) ── */
+    #fallback-wrap {
+      display: none; position: fixed; inset: 0; z-index: 3;
+      background: #0d0a06;
+      flex-direction: column; align-items: center; justify-content: center;
     }
-    #fallback-mv { width:100%; height:60vh; background:transparent; }
-    .fallback-note { font-size:10px; letter-spacing:2px; color:rgba(246,237,224,0.3); margin-top:8px; }
-    .fallback-prompt { font-size:11px; letter-spacing:1px; color:rgba(246,237,224,0.5); margin-top:4px; font-family:'Cinzel',serif; }
+    #fallback-mv { width: 100%; height: 55vh; background: transparent; }
+    .fb-note   { font-size: 10px; letter-spacing: 2px; color: rgba(246,237,224,0.3); margin-top: 8px; }
+    .fb-prompt { font-size: 11px; letter-spacing: 1px; color: rgba(246,237,224,0.45); margin-top: 4px; font-family: 'Cinzel', serif; }
   </style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div id="loading-screen">
   <div class="ld-mon">✿</div>
   <div class="ld-title">JAPANESE CUISINE</div>
@@ -170,14 +217,14 @@
   <div class="ld-msg" id="ld-msg">Starting…</div>
 </div>
 
+<!-- ERROR -->
 <div id="error-screen">
-  <h2>CAMERA ERROR</h2>
-  <p id="err-msg">Could not access camera.</p>
-  <button id="retry-btn">RETRY</button>
+  <h2>⚠ ERROR</h2>
+  <p id="err-msg">Something went wrong.</p>
+  <button id="retry-btn">↺ RETRY</button>
 </div>
 
-<video id="video-feed" autoplay playsinline muted></video>
-
+<!-- TOP BAR -->
 <div id="top-bar">
   <div class="brand-block">
     <div class="brand-en">JAPANESE CUISINE</div>
@@ -189,6 +236,7 @@
   </div>
 </div>
 
+<!-- SCAN FRAME -->
 <div id="scan-frame">
   <div class="c tl"></div><div class="c tr"></div>
   <div class="c bl"></div><div class="c br"></div>
@@ -196,12 +244,17 @@
   <div id="scan-hint">POINT AT BUSINESS CARD</div>
 </div>
 
-<div id="model-fallback">
-  <model-viewer id="fallback-mv" camera-controls auto-rotate shadow-intensity="1" exposure="1.1"></model-viewer>
-  <div class="fallback-note">AR not available — 3D preview mode</div>
-  <div class="fallback-prompt">Select a dish below ↓</div>
+<!-- FALLBACK 3D VIEWER -->
+<div id="fallback-wrap">
+  <model-viewer id="fallback-mv"
+    camera-controls auto-rotate
+    shadow-intensity="1" exposure="1.1">
+  </model-viewer>
+  <div class="fb-note">AR unavailable — 3D preview</div>
+  <div class="fb-prompt">Select a dish below ↓</div>
 </div>
 
+<!-- BOTTOM PANEL -->
 <div id="bottom-panel">
   <div class="panel-label">
     <span>SELECT A DISH</span>
@@ -210,67 +263,80 @@
   <div id="dish-row"></div>
 </div>
 
+<!-- POPUP -->
 <div id="info-popup">
   <div class="ip-close" id="ip-close">✕</div>
-  <div class="ip-name" id="ip-name"></div>
-  <div class="ip-jp"   id="ip-jp"></div>
-  <div class="ip-desc" id="ip-desc"></div>
+  <div class="ip-name"  id="ip-name"></div>
+  <div class="ip-jp"    id="ip-jp"></div>
+  <div class="ip-desc"  id="ip-desc"></div>
   <div class="ip-foot">
     <div class="ip-price" id="ip-price"></div>
     <div class="ip-tags"  id="ip-tags"></div>
   </div>
 </div>
 
+<!-- model-viewer for fallback -->
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
 <script>
-/* ── DISHES ─────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   DISH DATA
+════════════════════════════════════════════════════ */
 const DISHES = [
-  { id:'ramen',    emoji:'🍜', name:'Ramen',           jp:'ラーメン',     price:320, veg:false, isNew:true,  dotd:false, desc:'Rich tonkotsu broth with chashu pork, soft-boiled egg, bamboo shoots and spring onion.', glb:'3d-model/Ramen/Ramen.glb', scale:0.2 },
-  { id:'gyoza',    emoji:'🥟', name:'Gyoza',           jp:'餃子',          price:180, veg:false, isNew:false, dotd:true,  desc:'Pan-fried pork & cabbage dumplings with a crisp golden base and dipping sauce.',          glb:'3d-model/Gyoza/Gyoza.glb', scale:0.3 },
-  { id:'sashimi',  emoji:'🐟', name:'Salmon Sashimi',  jp:'鮭の刺身',     price:380, veg:false, isNew:false, dotd:false, desc:'Premium Norwegian salmon sliced to order, served with wasabi and pickled ginger.',         glb:'3d-model/Salmon-Sashimi/Salmon-Sashimi.glb', scale:0.3 },
-  { id:'tempura',  emoji:'🍤', name:'Tempura',         jp:'天ぷら',        price:290, veg:false, isNew:false, dotd:false, desc:'Lightly battered prawns and seasonal vegetables, fried to a delicate crisp.',              glb:'3d-model/Tempura/Tempura.glb', scale:0.3 },
-  { id:'takoyaki', emoji:'🐙', name:'Takoyaki',        jp:'たこ焼き',     price:160, veg:false, isNew:true,  dotd:false, desc:'Osaka-style octopus balls topped with bonito flakes, mayo and takoyaki sauce.',            glb:'3d-model/Takoyaki/Takoyaki.glb', scale:0.5 },
-  { id:'karaage',  emoji:'🍗', name:'Karaage',         jp:'唐揚げ',        price:200, veg:false, isNew:false, dotd:false, desc:'Bite-sized chicken marinated in soy and ginger, deep-fried to crispy perfection.',         glb:'3d-model/Karaage/Karaage.glb', scale:0.15 },
-  { id:'edamame',  emoji:'🫘', name:'Edamame',         jp:'枝豆',          price:120, veg:true,  isNew:false, dotd:false, desc:'Steamed young soy beans, lightly salted — the perfect sharing starter.',                  glb:'3d-model/Edamame/Edamame.glb', scale:0.06 },
-  { id:'miso',     emoji:'🍵', name:'Miso Soup',       jp:'味噌汁',        price:90,  veg:true,  isNew:false, dotd:false, desc:'Traditional white miso broth with silken tofu, wakame seaweed and spring onion.',          glb:'3d-model/Miso-Soup/Miso-Soup.glb', scale:0.3 },
-  { id:'tofu',     emoji:'🫕', name:'Agedashi Tofu',   jp:'揚げ出し豆腐', price:190, veg:true,  isNew:false, dotd:true,  desc:'Soft tofu, lightly coated in potato starch, deep-fried and served in dashi broth.',        glb:'3d-model/Agedashi-Tofu/Agedashi-Tofu.glb', scale:0.15 },
-  { id:'matcha',   emoji:'🍦', name:'Matcha Ice Cream',jp:'抹茶アイス',   price:150, veg:true,  isNew:false, dotd:false, desc:'Creamy ceremonial-grade matcha ice cream with a subtle bitterness and sweet finish.',       glb:'3d-model/Matcha-Ice-Cream/Matcha-Ice-Cream.glb', scale:0.3 },
+  { id:'ramen',    emoji:'🍜', name:'Ramen',           jp:'ラーメン',     price:320, veg:false, isNew:true,  dotd:false, desc:'Rich tonkotsu broth with chashu pork, soft-boiled egg, bamboo shoots and spring onion.', glb:'3d-model/Ramen/Ramen.glb',                       scale:0.2  },
+  { id:'gyoza',    emoji:'🥟', name:'Gyoza',           jp:'餃子',          price:180, veg:false, isNew:false, dotd:true,  desc:'Pan-fried pork & cabbage dumplings with a crisp golden base and dipping sauce.',         glb:'3d-model/Gyoza/Gyoza.glb',                       scale:0.3  },
+  { id:'sashimi',  emoji:'🐟', name:'Salmon Sashimi',  jp:'鮭の刺身',     price:380, veg:false, isNew:false, dotd:false, desc:'Premium Norwegian salmon sliced to order, served with wasabi and pickled ginger.',        glb:'3d-model/Salmon-Sashimi/Salmon-Sashimi.glb',     scale:0.3  },
+  { id:'tempura',  emoji:'🍤', name:'Tempura',         jp:'天ぷら',        price:290, veg:false, isNew:false, dotd:false, desc:'Lightly battered prawns and seasonal vegetables, fried to a delicate crisp.',             glb:'3d-model/Tempura/Tempura.glb',                   scale:0.3  },
+  { id:'takoyaki', emoji:'🐙', name:'Takoyaki',        jp:'たこ焼き',     price:160, veg:false, isNew:true,  dotd:false, desc:'Osaka-style octopus balls topped with bonito flakes, mayo and takoyaki sauce.',           glb:'3d-model/Takoyaki/Takoyaki.glb',                 scale:0.5  },
+  { id:'karaage',  emoji:'🍗', name:'Karaage',         jp:'唐揚げ',        price:200, veg:false, isNew:false, dotd:false, desc:'Bite-sized chicken marinated in soy and ginger, deep-fried to crispy perfection.',        glb:'3d-model/Karaage/Karaage.glb',                   scale:0.15 },
+  { id:'edamame',  emoji:'🫘', name:'Edamame',         jp:'枝豆',          price:120, veg:true,  isNew:false, dotd:false, desc:'Steamed young soy beans, lightly salted — the perfect sharing starter.',                 glb:'3d-model/Edamame/Edamame.glb',                   scale:0.06 },
+  { id:'miso',     emoji:'🍵', name:'Miso Soup',       jp:'味噌汁',        price:90,  veg:true,  isNew:false, dotd:false, desc:'Traditional white miso broth with silken tofu, wakame seaweed and spring onion.',         glb:'3d-model/Miso-Soup/Miso-Soup.glb',               scale:0.3  },
+  { id:'tofu',     emoji:'🫕', name:'Agedashi Tofu',   jp:'揚げ出し豆腐', price:190, veg:true,  isNew:false, dotd:true,  desc:'Soft tofu, lightly coated in potato starch, deep-fried and served in dashi broth.',       glb:'3d-model/Agedashi-Tofu/Agedashi-Tofu.glb',      scale:0.15 },
+  { id:'matcha',   emoji:'🍦', name:'Matcha Ice Cream',jp:'抹茶アイス',   price:150, veg:true,  isNew:false, dotd:false, desc:'Creamy ceremonial-grade matcha ice cream with a subtle bitterness and sweet finish.',      glb:'3d-model/Matcha-Ice-Cream/Matcha-Ice-Cream.glb', scale:0.3  },
 ];
 
-/* ── STATE ──────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════ */
 let activeDish  = null;
 let cardFound   = false;
 let arReady     = false;
-let arAnchor    = null;
 let modelGroups = {};
-let animLoopId  = null;
 
-/* ── UI HELPERS ─────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   UI HELPERS
+════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+
 function setProgress(pct, msg) {
-  document.getElementById('ld-bar').style.width = pct + '%';
-  document.getElementById('ld-msg').textContent  = msg;
+  $('ld-bar').style.width   = pct + '%';
+  $('ld-msg').textContent   = msg;
 }
+
 function hideLoading() {
-  const ls = document.getElementById('loading-screen');
+  const ls = $('loading-screen');
   ls.classList.add('fade-out');
   setTimeout(() => ls.style.display = 'none', 700);
 }
+
 function showError(html) {
   hideLoading();
-  document.getElementById('err-msg').innerHTML = html;
-  document.getElementById('error-screen').style.display = 'flex';
+  $('err-msg').innerHTML = html;
+  $('error-screen').style.display = 'flex';
 }
-function setStatus(label, ok) {
-  document.getElementById('s-label').textContent = label;
-  document.getElementById('s-dot').className = 's-dot' + (ok ? ' ok' : '');
-}
-document.getElementById('retry-btn').addEventListener('click', () => location.reload());
 
-/* ── DISH PILLS ─────────────────────────────────────────── */
+function setStatus(label, ok) {
+  $('s-label').textContent = label;
+  $('s-dot').className = 's-dot' + (ok ? ' ok' : '');
+}
+
+$('retry-btn').addEventListener('click', () => location.reload());
+
+/* ════════════════════════════════════════════════════
+   DISH PILLS
+════════════════════════════════════════════════════ */
 function renderDishes() {
-  const row = document.getElementById('dish-row');
-  row.innerHTML = DISHES.map(d => `
+  $('dish-row').innerHTML = DISHES.map(d => `
     <div class="d-pill" data-id="${d.id}">
       <span class="d-emoji">${d.emoji}</span>
       <div class="d-info">
@@ -279,26 +345,34 @@ function renderDishes() {
       </div>
       <div class="d-price">₹${d.price}</div>
     </div>`).join('');
-  row.querySelectorAll('.d-pill').forEach(p =>
+
+  $('dish-row').querySelectorAll('.d-pill').forEach(p =>
     p.addEventListener('click', () => selectDish(p.dataset.id))
   );
 }
 
-/* ── DISH SELECTION ─────────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   DISH SELECTION
+════════════════════════════════════════════════════ */
 function selectDish(id) {
   const dish = DISHES.find(d => d.id === id);
   if (!dish) return;
   if (activeDish?.id === id) { clearDish(); return; }
+
   activeDish = dish;
-  document.querySelectorAll('.d-pill').forEach(p => p.classList.toggle('active', p.dataset.id === id));
+  document.querySelectorAll('.d-pill')
+    .forEach(p => p.classList.toggle('active', p.dataset.id === id));
+
   openPopup(dish);
 
   if (arReady && cardFound) {
-    showARModel(dish.id);
+    showARModel(id);
   } else if (!arReady) {
     showFallback(dish);
   }
+  // if arReady but card not found: model will show when card is detected
 }
+
 function clearDish() {
   activeDish = null;
   document.querySelectorAll('.d-pill').forEach(p => p.classList.remove('active'));
@@ -306,176 +380,206 @@ function clearDish() {
   hideAllModels();
 }
 
-/* ── POPUP ──────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   POPUP
+════════════════════════════════════════════════════ */
 function openPopup(d) {
-  document.getElementById('ip-name').textContent = d.name;
-  document.getElementById('ip-jp').textContent   = d.jp;
-  document.getElementById('ip-desc').textContent = d.desc;
-  document.getElementById('ip-price').innerHTML  =
+  $('ip-name').textContent = d.name;
+  $('ip-jp').textContent   = d.jp;
+  $('ip-desc').textContent = d.desc;
+  $('ip-price').innerHTML  =
     `<span style="font-size:13px;color:rgba(246,237,224,0.35)">₹</span>${d.price}`;
-  document.getElementById('ip-tags').innerHTML = [
+  $('ip-tags').innerHTML = [
     d.veg   ? '<span class="i-tag t-veg">🌿 VEG</span>'  : '',
     d.isNew ? '<span class="i-tag t-new">新 NEW</span>'   : '',
     d.dotd  ? '<span class="i-tag t-pick">★ PICK</span>' : '',
   ].join('');
-  document.getElementById('info-popup').classList.add('open');
+  $('info-popup').classList.add('open');
 }
-function closePopup() { document.getElementById('info-popup').classList.remove('open'); }
-document.getElementById('ip-close').addEventListener('click', clearDish);
+function closePopup() { $('info-popup').classList.remove('open'); }
+$('ip-close').addEventListener('click', clearDish);
 
-/* ── AR MODEL HELPERS ───────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   AR MODEL HELPERS
+════════════════════════════════════════════════════ */
 function hideAllModels() {
   Object.values(modelGroups).forEach(g => { if (g) g.visible = false; });
 }
 function showARModel(id) {
   hideAllModels();
-  if (modelGroups[id]) modelGroups[id].visible = true;
+  if (modelGroups[id]) {
+    modelGroups[id].visible = true;
+    // Reset rotation so entrance is clean
+    modelGroups[id].rotation.y = 0;
+  }
 }
 
-/* ── FALLBACK (model-viewer) ────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   FALLBACK (model-viewer, no AR)
+════════════════════════════════════════════════════ */
 function showFallback(dish) {
-  const fb = document.getElementById('model-fallback');
-  const mv = document.getElementById('fallback-mv');
-  fb.style.display = 'flex';
+  const fw = $('fallback-wrap');
+  const mv = $('fallback-mv');
+  fw.style.display = 'flex';
   mv.setAttribute('src', dish.glb);
-  const s = dish.scale;
-  mv.setAttribute('scale', `${s} ${s} ${s}`);
 }
 
-/* ── SCRIPT LOADER ──────────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   DYNAMIC SCRIPT LOADER
+════════════════════════════════════════════════════ */
 function loadScript(url) {
-  return new Promise((res, rej) => {
-    if (document.querySelector(`script[src="${url}"]`)) { res(); return; }
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${url}"]`)) { resolve(); return; }
     const s = document.createElement('script');
-    s.src = url; s.onload = res;
-    s.onerror = () => rej(new Error('Script load failed: ' + url));
+    s.src     = url;
+    s.onload  = resolve;
+    s.onerror = () => reject(new Error('Failed to load: ' + url));
     document.head.appendChild(s);
   });
 }
 
-/* ── MAIN ───────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════
+   MAIN INIT
+════════════════════════════════════════════════════ */
 async function init() {
   renderDishes();
-  setProgress(10, 'Requesting camera…');
+  setProgress(10, 'Loading AR engine…');
 
-  /* 1 ── Camera */
-  let stream;
+  /* ── Step 1: Load Three.js r136 (compatible with MindAR 1.2.5) ── */
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal:'environment' } }, audio: false,
-    });
-  } catch(e) {
-    const msg = e.name === 'NotAllowedError'
-      ? 'Camera permission denied.<br>Tap <b>Allow</b> when prompted, then reload.'
-      : `Camera unavailable (<code>${e.name}</code>).<br>Open in Chrome or Safari.`;
-    showError(msg); return;
-  }
-
-  const video = document.getElementById('video-feed');
-  video.srcObject = stream;
-  video.style.display = 'block';
-  await video.play().catch(() => {});
-  setProgress(30, 'Camera active ✓');
-
-  /* 2 ── Load Three.js */
-  setProgress(45, 'Loading AR engine…');
-  try {
-    await loadScript('https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js');
-    await loadScript('https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/loaders/GLTFLoader.js');
-    await loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
-  } catch(e) {
-    console.warn('[AR] Engine load failed — fallback mode:', e);
-    setProgress(100, 'Ready (3D preview only)');
-    setStatus('3D MODE', false);
-    document.getElementById('scan-frame').style.display = 'none';
-    hideLoading();
+    await loadScript('https://cdn.jsdelivr.net/npm/three@0.136.0/build/three.min.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/three@0.136.0/examples/js/loaders/GLTFLoader.js');
+  } catch (e) {
+    console.error('[Three.js] load failed:', e);
+    showError(`Could not load 3D engine.<br>Check your internet connection.<br><code>${e.message}</code>`);
     return;
   }
+  setProgress(30, 'Three.js ready ✓');
 
-  setProgress(60, 'Preparing image target…');
-
-  /* 3 ── MindAR */
+  /* ── Step 2: Load MindAR ── */
   try {
-    const MIND_FILE = 'targets/card.mind';
-
-    const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-      container: document.body,
-      imageTargetSrc: MIND_FILE,
-      uiLoading: 'no', uiError: 'no', uiScanning: 'no',
-    });
-
-    const { renderer, scene, camera } = mindarThree;
-
-    // Style the renderer canvas
-    Object.assign(renderer.domElement.style, {
-      position:'fixed', inset:'0', zIndex:'2', pointerEvents:'none',
-    });
-
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
-    dir.position.set(2,4,3); scene.add(dir);
-
-    setProgress(75, 'Loading 3D models…');
-
-    /* Attach anchor */
-    const anchor = mindarThree.addAnchor(0);
-    arAnchor = anchor;
-    const loader = new THREE.GLTFLoader();
-
-    for (const dish of DISHES) {
-      try {
-        const gltf = await new Promise((res, rej) =>
-          loader.load(dish.glb, res, undefined, rej)
-        );
-        const group = gltf.scene;
-        group.scale.setScalar(dish.scale);
-        group.position.set(0, 0.12, 0);
-        group.visible = false;
-        anchor.group.add(group);
-        modelGroups[dish.id] = group;
-      } catch {
-        modelGroups[dish.id] = null;
-      }
-    }
-
-    setProgress(92, 'Waiting for card…');
-
-    anchor.onTargetFound = () => {
-      cardFound = true;
-      setStatus('CARD FOUND ✦', true);
-      document.getElementById('scan-frame').style.opacity = '0';
-      if (activeDish) showARModel(activeDish.id);
-    };
-    anchor.onTargetLost = () => {
-      cardFound = false;
-      setStatus('SCAN CARD', false);
-      document.getElementById('scan-frame').style.opacity = '1';
-      hideAllModels();
-    };
-
-    await mindarThree.start();
-    arReady = true;
-
-    renderer.setAnimationLoop(() => {
-      if (activeDish && cardFound && modelGroups[activeDish.id]) {
-        modelGroups[activeDish.id].rotation.y += 0.008;
-      }
-      renderer.render(scene, camera);
-    });
-
-    setProgress(100, 'Ready — point at card ✦');
-    setStatus('SCAN CARD', false);
-    setTimeout(hideLoading, 500);
-
-  } catch(e) {
-    console.error('[MindAR] failed:', e);
+    await loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
+  } catch (e) {
+    console.error('[MindAR] load failed:', e);
+    // Graceful fallback — no AR but 3D preview works
     arReady = false;
     setProgress(100, 'Ready (3D preview only)');
     setStatus('3D MODE', false);
-    document.getElementById('scan-frame').style.display = 'none';
-    setTimeout(hideLoading, 400);
+    $('scan-frame').style.display = 'none';
+    hideLoading();
+    return;
   }
+  setProgress(50, 'MindAR ready ✓');
+
+  /* ── Step 3: Init MindAR with local .mind file ── */
+  let mindarThree;
+  try {
+    mindarThree = new window.MINDAR.IMAGE.MindARThree({
+      container:        document.body,
+      imageTargetSrc:   'targets/card.mind',   // ← your local file
+      uiLoading:        'no',
+      uiError:          'no',
+      uiScanning:       'no',
+    });
+  } catch (e) {
+    console.error('[MindAR] init failed:', e);
+    showError(`AR init failed.<br><code>${e.message}</code>`);
+    return;
+  }
+
+  const { renderer, scene, camera } = mindarThree;
+
+  /* Make the renderer canvas sit in z-index 2 (above video at z:1) */
+  Object.assign(renderer.domElement.style, {
+    position:      'fixed',
+    inset:         '0',
+    zIndex:        '2',
+    pointerEvents: 'none',
+    width:         '100%',
+    height:        '100%',
+  });
+
+  /* ── Lighting ── */
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  dirLight.position.set(2, 4, 3);
+  scene.add(dirLight);
+
+  /* ── Anchor on target index 0 ── */
+  const anchor = mindarThree.addAnchor(0);
+
+  /* ── Load all GLTF models ── */
+  setProgress(60, 'Loading 3D models…');
+  const loader = new THREE.GLTFLoader();
+
+  const loadPromises = DISHES.map(dish =>
+    new Promise(resolve => {
+      loader.load(
+        dish.glb,
+        gltf => {
+          const group = gltf.scene;
+          group.scale.setScalar(dish.scale);
+          group.position.set(0, 0.12, 0);
+          group.visible = false;
+          anchor.group.add(group);
+          modelGroups[dish.id] = group;
+          resolve();
+        },
+        undefined,
+        err => {
+          console.warn(`[GLTF] Could not load ${dish.glb}:`, err);
+          modelGroups[dish.id] = null;
+          resolve(); // don't block other models
+        }
+      );
+    })
+  );
+
+  await Promise.all(loadPromises);
+  setProgress(85, 'Models loaded ✓');
+
+  /* ── Tracking callbacks ── */
+  anchor.onTargetFound = () => {
+    cardFound = true;
+    setStatus('CARD FOUND ✦', true);
+    $('scan-frame').style.opacity = '0';
+    if (activeDish) showARModel(activeDish.id);
+  };
+
+  anchor.onTargetLost = () => {
+    cardFound = false;
+    setStatus('SCAN CARD', false);
+    $('scan-frame').style.opacity = '1';
+    hideAllModels();
+  };
+
+  /* ── Start AR (this requests camera permission) ── */
+  setProgress(90, 'Starting camera…');
+  try {
+    await mindarThree.start();
+  } catch (e) {
+    console.error('[MindAR] start failed:', e);
+    const msg = e.name === 'NotAllowedError' || String(e).includes('permission')
+      ? 'Camera permission denied.<br>Allow camera access and tap Retry.'
+      : `Could not start AR.<br><code>${String(e).slice(0, 80)}</code>`;
+    showError(msg);
+    return;
+  }
+
+  arReady = true;
+
+  /* ── Render loop ── */
+  renderer.setAnimationLoop(() => {
+    // Slowly rotate the active model
+    if (activeDish && cardFound && modelGroups[activeDish.id]) {
+      modelGroups[activeDish.id].rotation.y += 0.007;
+    }
+    renderer.render(scene, camera);
+  });
+
+  setProgress(100, 'Ready — point at your card ✦');
+  setStatus('SCAN CARD', false);
+  setTimeout(hideLoading, 500);
 }
 
 window.addEventListener('DOMContentLoaded', init);
