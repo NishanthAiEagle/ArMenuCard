@@ -1,343 +1,379 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>Japanese Cuisine — AR Menu</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AR Menu – 3D Dish Try-On</title>
 
-  <!-- MindAR + A-Frame -->
+  <!-- A-Frame & MindAR -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
   <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --ink:        #0f0a04;
-      --washi:      #f6edde;
-      --washi-dark: #ecdfc8;
-      --crimson:    #8b1a1a;
-      --crimson-lt: #c8312a;
-      --gold:       #9a7820;
-      --gold-lt:    #c4a030;
-      --gold-pale:  #e8d080;
-      --sage:       #3d6b35;
-      --sage-lt:    #d0e8c0;
-      --ink-mid:    #3d2b14;
-      --ink-faint:  #9a7d5a;
+      --gold: #D4A84B;
+      --dark: #0d0d0d;
+      --glass: rgba(10, 10, 10, 0.65);
+      --radius: 14px;
     }
 
-    html, body {
-      width: 100%; height: 100%;
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #000;
       overflow: hidden;
-      background: var(--ink);
-      font-family: 'Noto Sans JP', sans-serif;
     }
 
-    /* ─── SPLASH SCREEN ─── */
-    #splash {
-      position: fixed; inset: 0; z-index: 9999;
-      background: linear-gradient(160deg, #0f0a04 0%, #1e1208 50%, #0f0a04 100%);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 2rem;
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    #splash.hidden {
-      opacity: 0; transform: scale(1.04); pointer-events: none;
+    .a-enter-vr-button { display: none !important; }
+
+    /* ── LOGO ── */
+    #logo {
+      position: absolute;
+      top: 12px; left: 12px;
+      width: 90px;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
     }
 
-    #splash::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='40' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='0' cy='40' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='40' cy='40' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='10' cy='20' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3Ccircle cx='30' cy='20' r='20' fill='none' stroke='%238b1a1a' stroke-width='0.8'/%3E%3C/svg%3E");
-      opacity: 0.06; pointer-events: none;
+    /* ── DISH LABEL ── */
+    #dishLabel {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(212,168,75,0.35);
+      border-radius: 50px;
+      padding: 8px 22px;
+      color: var(--gold);
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
     }
 
-    .splash-content {
-      position: relative; z-index: 2;
-      display: flex; flex-direction: column;
-      align-items: center; text-align: center;
+    /* ── DISH CAROUSEL ── */
+    #dishCarousel {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      max-width: calc(100vw - 24px);
+      padding: 10px 14px;
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(212,168,75,0.2);
+      border-radius: 60px;
+      scrollbar-width: none;
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
     }
+    #dishCarousel::-webkit-scrollbar { display: none; }
 
-    .splash-mon {
-      width: 80px; height: 80px;
-      border: 1.5px solid rgba(196,160,48,0.4);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 24px;
-      position: relative;
-      animation: monSpin 18s linear infinite;
-    }
-    .splash-mon::before {
-      content: '✿';
-      font-size: 38px; color: var(--crimson-lt);
-      animation: monSpin 18s linear infinite reverse;
-    }
-    @keyframes monSpin { to { transform: rotate(360deg); } }
-
-    .splash-title {
-      font-family: 'Cinzel', serif;
-      font-size: clamp(32px, 8vw, 52px);
-      font-weight: 700; letter-spacing: 0.1em;
-      background: linear-gradient(160deg, #f6edde 30%, var(--gold-pale) 65%, #f6edde 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin-bottom: 28px;
-    }
-
-    .splash-instructions {
-      background: rgba(245,237,224,0.05);
-      border: 1px solid rgba(196,160,48,0.18);
-      padding: 16px 22px; margin-bottom: 36px;
-      max-width: 320px;
-      color: rgba(245,237,224,0.5);
-      font-size: 12px; line-height: 1.9;
-    }
-
-    #start-btn {
-      background: var(--crimson);
-      color: var(--washi);
-      border: none;
-      padding: 16px 48px;
-      font-family: 'Cinzel', serif;
-      font-size: 13px; font-weight: 600;
-      letter-spacing: 3px;
+    .dish-thumb {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
       cursor: pointer;
-      box-shadow: 0 6px 28px rgba(139,26,26,0.5);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .dish-thumb:hover { transform: scale(1.08); }
+
+    .dish-thumb img {
+      width: 52px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .dish-thumb.active img {
+      border-color: var(--gold);
+      box-shadow: 0 0 10px rgba(212,168,75,0.55);
     }
 
-    /* ─── AR SCENE ─── */
-    #ar-scene-wrap {
-      position: fixed; inset: 0; z-index: 1;
-      visibility: hidden;
-    }
-    #ar-scene-wrap.active { visibility: visible; }
-
-    /* ─── UI ELEMENTS ─── */
-    #ar-ui {
-      position: fixed; inset: 0; z-index: 100;
-      display: none; flex-direction: column;
-      justify-content: space-between;
-      pointer-events: none;
-    }
-    #ar-ui.active { display: flex; }
-
-    #ar-topbar {
-      pointer-events: auto;
-      background: linear-gradient(180deg, rgba(10,6,2,0.85) 0%, transparent 100%);
-      padding: 16px 20px 28px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-
-    .topbar-title { font-family: 'Cinzel', serif; color: var(--washi); font-size: 18px; }
-
-    #marker-status {
-      display: flex; align-items: center; gap: 7px;
-      background: rgba(10,6,2,0.7);
-      border: 1px solid rgba(196,160,48,0.2);
-      padding: 7px 14px;
-      font-size: 10px; color: rgba(245,237,224,0.55);
-    }
-
-    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #999; }
-    .status-dot.found { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
-
-    #dish-panel {
-      pointer-events: auto;
-      background: linear-gradient(0deg, rgba(10,6,2,0.96) 0%, rgba(10,6,2,0.88) 80%, transparent 100%);
-      padding: 28px 14px 20px;
-    }
-
-    #dish-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-
-    .dish-card {
-      background: rgba(245,237,224,0.06);
-      border: 1px solid rgba(245,237,224,0.08);
-      padding: 10px 6px;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 5px;
+    .dish-thumb span {
+      font-size: 9px;
+      color: #ccc;
       text-align: center;
-      color: white;
+      max-width: 60px;
+      line-height: 1.2;
+      transition: color 0.25s;
     }
-    .dish-card.active { border-color: var(--crimson-lt); background: rgba(139,26,26,0.25); }
+    .dish-thumb.active span { color: var(--gold); }
 
-    /* Toasts */
-    #ar-placed-toast, #model-loading {
-      position: fixed; left: 50%; transform: translateX(-50%);
-      background: rgba(10,6,2,0.9); border: 1px solid var(--gold);
-      padding: 8px 20px; font-size: 10px; color: var(--gold-pale);
-      z-index: 200; opacity: 0; transition: opacity 0.3s;
+    /* ── BOTTOM ACTION BUTTONS ── */
+    #bottomActions {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 200;
+      opacity: 0;
       pointer-events: none;
+      transition: opacity 0.4s ease;
     }
-    #ar-placed-toast.show, #model-loading.show { opacity: 1; }
-    #model-loading { bottom: 260px; }
-    #ar-placed-toast { top: 80px; }
 
+    /* ── TOP-RIGHT: LOCATION ── */
+    #locationBtn {
+      position: absolute;
+      top: 16px; right: 16px;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ── SHARED BUTTON STYLE ── */
+    .plan-button {
+      padding: 11px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      border: 1px solid rgba(212,168,75,0.4);
+      border-radius: 50px;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .plan-button:hover {
+      background: rgba(212,168,75,0.18);
+      border-color: var(--gold);
+    }
+
+    /* ── WHATSAPP ── */
+    #whatsappBtn {
+      position: fixed;
+      bottom: 100px; right: 18px;
+      background: #25D366;
+      border-radius: 50%;
+      width: 52px; height: 52px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 230;
+      box-shadow: 0 4px 14px rgba(37,211,102,0.4);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.2s;
+    }
+    #whatsappBtn:hover { transform: scale(1.08); }
+    #whatsappBtn img { width: 28px; height: 28px; }
+
+    /* ── SCAN HINT (shown before target found) ── */
+    #scanHint {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform: translate(-50%, 50%);
+      text-align: center;
+      color: rgba(255,255,255,0.55);
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      z-index: 10;
+      transition: opacity 0.4s;
+    }
+    #scanHint .icon { font-size: 38px; margin-bottom: 10px; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .dish-thumb img { width: 44px; height: 44px; }
+      .plan-button { padding: 10px 14px; font-size: 13px; }
+    }
   </style>
 </head>
 <body>
 
-<div id="splash">
-  <div class="splash-content">
-    <div class="splash-mon"></div>
-    <h1 class="splash-title">Japanese Cuisine</h1>
-    <div class="splash-instructions">
-      <p>
-        <strong>① Point camera</strong> at your business card<br>
-        <strong>② Card is detected</strong> as AR marker<br>
-        <strong>③ Tap any dish</strong> to place 3D model
-      </p>
-    </div>
-    <button id="start-btn"><span>✦ START EXPERIENCE ✦</span></button>
+  <!-- Logo -->
+  <img src="logo1.png" id="logo" alt="Logo">
+
+  <!-- Current Dish Label -->
+  <div id="dishLabel">🍱 Agedashi Tofu</div>
+
+  <!-- Scan Hint -->
+  <div id="scanHint">
+    <div class="icon">📷</div>
+    Point camera at the menu card
   </div>
-</div>
 
-<div id="ar-scene-wrap">
+  <!-- Dish Carousel -->
+  <div id="dishCarousel">
+    <!-- filled by JS -->
+  </div>
+
+  <!-- Bottom Buttons -->
+  <div id="bottomActions">
+    <button class="plan-button" onclick="window.location.href='https://jewels-ai.github.io/Ai_Jewellery_Demo_Ai/'">🌟 Try on Jewellery</button>
+    <button class="plan-button" onclick="window.open('https://jewels-ai.github.io/Ai_savings-plan_Ai/')">💰 Savings Plan</button>
+  </div>
+
+  <!-- Location Top Right -->
+  <button class="plan-button" id="locationBtn" onclick="window.open('https://maps.app.goo.gl/U3cmv1V6CV9e95QB8')">📍 Location</button>
+
+  <!-- WhatsApp -->
+  <div id="whatsappBtn" onclick="window.open('https://wa.me/917019743880','_blank')">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+  </div>
+
+  <!-- AR Scene -->
   <a-scene
-    id="ar-scene"
-    mindar-image="imageTargetSrc: targets/card.mind; autoStart: false; uiLoading: no; uiScanning: no;"
-    color-space="sRGB"
-    renderer="colorManagement: true; physicallyCorrectLights: true;"
+    mindar-image="imageTargetSrc: ./targets/card.mind; filterMinCF: 0.0001; filterBeta: 0.001"
+    renderer="colorManagement: true; antialias: true; logarithmicDepthBuffer: true"
+    loading-screen="enabled: false"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: true">
+    device-orientation-permission-ui="enabled: false">
 
-    <a-assets id="a-assets"></a-assets>
-
-    <a-entity mindar-image-target="targetIndex: 0" id="ar-target">
-      <a-entity id="model-container" position="0 0.05 0"></a-entity>
-      <a-ring color="#8b1a1a" inner-radius="0.42" outer-radius="0.45" rotation="-90 0 0" opacity="0.5"></a-ring>
-    </a-entity>
+    <a-assets>
+      <!-- Models are loaded dynamically -->
+    </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-    <a-light type="ambient" intensity="0.7"></a-light>
-    <a-light type="directional" intensity="1.0" position="1 3 2"></a-light>
+
+    <a-entity
+      id="target1"
+      mindar-image-target="targetIndex: 0">
+
+      <!-- 3D model entity, src swapped by JS -->
+      <a-entity
+        id="modelEntity"
+        position="0 0 0.1"
+        rotation="-90 0 0"
+        scale="0.12 0.12 0.12"
+        gltf-model=""
+        animation="property: rotation; to: -90 360 0; loop: true; dur: 8000; easing: linear">
+      </a-entity>
+
+    </a-entity>
   </a-scene>
-</div>
 
-<div id="ar-ui">
-  <div id="ar-topbar">
-    <div class="topbar-title">Japanese Cuisine</div>
-    <div id="marker-status">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">Scanning…</span>
-    </div>
-  </div>
+  <script>
+    /* ── DISH DATA ── */
+    const dishes = [
+      { name: "Agedashi Tofu",    folder: "Agedashi-Tofu",    model: "Agedashi-Tofu.glb"    },
+      { name: "Edamame",          folder: "Edamame",          model: "Edamame.glb"           },
+      { name: "Gyoza",            folder: "Gyoza",            model: "Gyoza.glb"             },
+      { name: "Karaage",          folder: "Karaage",          model: "Karaage.glb"           },
+      { name: "Matcha Ice Cream", folder: "Matcha-Ice-Cream", model: "Matcha-Ice-Cream.glb"  },
+      { name: "Miso Soup",        folder: "Miso-Soup",        model: "Miso-Soup.glb"         },
+      { name: "Ramen",            folder: "Ramen",            model: "Ramen.glb"             },
+      { name: "Salmon Sashimi",   folder: "Salmon-Sashimi",   model: "Salmon-Sashimi.glb"    },
+      { name: "Takoyaki",         folder: "Takoyaki",         model: "Takoyaki.glb"          },
+      { name: "Tempura",          folder: "Tempura",          model: "Tempura.glb"           },
+    ];
 
-  <div id="dish-panel">
-    <div id="dish-grid"></div>
-  </div>
-</div>
+    let currentIndex = 0;
 
-<div id="ar-placed-toast">✦ Placed on card</div>
-<div id="model-loading"><span class="ml-text">Loading 3D Model…</span></div>
+    /* ── DOM refs ── */
+    const modelEntity  = document.querySelector('#modelEntity');
+    const dishLabel    = document.querySelector('#dishLabel');
+    const carousel     = document.querySelector('#dishCarousel');
+    const locationBtn  = document.querySelector('#locationBtn');
+    const bottomActions= document.querySelector('#bottomActions');
+    const whatsappBtn  = document.querySelector('#whatsappBtn');
+    const logo         = document.querySelector('#logo');
+    const scanHint     = document.querySelector('#scanHint');
+    const target       = document.querySelector('#target1');
 
-<script>
-const ASSETS_BASE = '3d-model';
-const DISHES = [
-  { id:'gyoza', name:'Gyoza', emoji:'🥟', price:180, folder:'Gyoza', file:'Gyoza', scale:0.3 },
-  { id:'edamame', name:'Edamame', emoji:'🫘', price:120, folder:'Edamame', file:'Edamame', scale:0.06 },
-  { id:'ramen', name:'Ramen', emoji:'🍜', price:320, folder:'Ramen', file:'Ramen', scale:0.2 },
-  { id:'tempura', name:'Tempura', emoji:'🍤', price:240, folder:'Tempura', file:'Tempura', scale:0.3 }
-];
+    const overlayEls = [locationBtn, bottomActions, whatsappBtn, logo, dishLabel, carousel];
 
-let arStarted = false;
-let markerFound = false;
-let activeDishId = null;
+    /* ── BUILD CAROUSEL ── */
+    dishes.forEach((dish, i) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'dish-thumb' + (i === 0 ? ' active' : '');
+      thumb.innerHTML = `
+        <img src="3d-model/${dish.folder}/${dish.folder}.png"
+             onerror="this.src='https://via.placeholder.com/52x52/1a1a1a/D4A84B?text=🍱'"
+             alt="${dish.name}">
+        <span>${dish.name}</span>
+      `;
+      thumb.addEventListener('click', () => selectDish(i));
+      carousel.appendChild(thumb);
+    });
 
-document.getElementById('start-btn').addEventListener('click', startAR);
+    /* ── SELECT DISH ── */
+    function selectDish(index) {
+      currentIndex = index;
+      const dish = dishes[index];
 
-async function startAR() {
-  if (arStarted) return;
-  arStarted = true;
+      // Update model
+      const modelPath = `3d-model/${dish.folder}/${dish.model}`;
+      modelEntity.setAttribute('gltf-model', modelPath);
 
-  document.getElementById('splash').classList.add('hidden');
-  document.getElementById('ar-scene-wrap').classList.add('active');
-  document.getElementById('ar-ui').classList.add('active');
+      // Update label
+      dishLabel.textContent = '🍱 ' + dish.name;
 
-  const sceneEl = document.querySelector('a-scene');
-  const startSystem = () => {
-    const minarSystem = sceneEl.systems['mindar-image-system'];
-    if (minarSystem) minarSystem.start(); 
-  };
+      // Update carousel active state
+      document.querySelectorAll('.dish-thumb').forEach((el, i) => {
+        el.classList.toggle('active', i === index);
+      });
 
-  if (sceneEl.hasLoaded) {
-    startSystem();
-  } else {
-    sceneEl.addEventListener('loaded', startSystem);
-  }
-
-  buildDishGrid();
-
-  const target = document.getElementById('ar-target');
-  target.addEventListener('targetFound', () => {
-    markerFound = true;
-    document.getElementById('status-dot').classList.add('found');
-    document.getElementById('status-text').textContent = 'Card Detected';
-  });
-  target.addEventListener('targetLost', () => {
-    markerFound = false;
-    document.getElementById('status-dot').classList.remove('found');
-    document.getElementById('status-text').textContent = 'Scanning…';
-  });
-}
-
-function buildDishGrid() {
-  const grid = document.getElementById('dish-grid');
-  grid.innerHTML = DISHES.map(d => `
-    <div class="dish-card" onclick="selectDish('${d.id}')" id="card-${d.id}">
-      <div style="font-size:24px">${d.emoji}</div>
-      <div style="font-size:10px">${d.name}</div>
-      <div style="color:#c4a030">₹${d.price}</div>
-    </div>
-  `).join('');
-}
-
-function selectDish(id) {
-  if (id === activeDishId) return;
-  activeDishId = id;
-
-  document.querySelectorAll('.dish-card').forEach(c => c.classList.toggle('active', c.id === `card-${id}`));
-  
-  document.getElementById('model-loading').classList.add('show');
-  loadModel(id);
-}
-
-function loadModel(id) {
-  const dish = DISHES.find(d => d.id === id);
-  const container = document.getElementById('model-container');
-  
-  // Clear previous
-  container.innerHTML = '';
-
-  const entity = document.createElement('a-entity');
-  entity.setAttribute('gltf-model', `${ASSETS_BASE}/${dish.folder}/${dish.file}.glb`);
-  entity.setAttribute('scale', `${dish.scale} ${dish.scale} ${dish.scale}`);
-  
-  entity.addEventListener('model-loaded', () => {
-    document.getElementById('model-loading').classList.remove('show');
-    if (markerFound) {
-      document.getElementById('ar-placed-toast').classList.add('show');
-      setTimeout(() => document.getElementById('ar-placed-toast').classList.remove('show'), 2000);
+      // Scroll thumb into view
+      const thumbs = document.querySelectorAll('.dish-thumb');
+      thumbs[index].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
-  });
 
-  entity.addEventListener('model-error', () => {
-    document.getElementById('model-loading').classList.remove('show');
-    console.error("Model failed to load");
-  });
+    /* ── INITIALISE FIRST MODEL ── */
+    selectDish(0);
 
-  container.appendChild(entity);
-}
-</script>
+    /* ── AR TARGET EVENTS ── */
+    target.addEventListener('targetFound', () => {
+      overlayEls.forEach(el => {
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+      });
+      scanHint.style.opacity = '0';
+    });
+
+    target.addEventListener('targetLost', () => {
+      overlayEls.forEach(el => {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+      });
+      scanHint.style.opacity = '1';
+    });
+
+    /* ── PREVENT DEV TOOLS ── */
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.addEventListener("keydown", e => {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && ["I","J","C"].includes(e.key)) ||
+        (e.ctrlKey && e.key === "u")
+      ) {
+        e.preventDefault();
+        alert("🚫 Action Disabled!");
+      }
+    });
+  </script>
 </body>
 </html>
