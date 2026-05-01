@@ -319,7 +319,7 @@
     }
 
     /* ══════════════════════════════
-       LOGO (in-AR)
+       LOGO (in-AR) — always top left
     ══════════════════════════════ */
     #logo {
       position: fixed; top: 14px; left: 14px;
@@ -367,7 +367,7 @@
        CAROUSEL
     ══════════════════════════════ */
     #dishCarousel {
-      position: fixed; bottom: 90px; left: 50%;
+      position: fixed; bottom: 20px; left: 50%;
       transform: translateX(-50%);
       display: flex; gap: 6px; flex-wrap: nowrap;
       overflow-x: auto;
@@ -442,18 +442,6 @@
     .dish-thumb.active span { color: var(--gold); }
 
     /* ══════════════════════════════
-       BOTTOM ACTIONS
-    ══════════════════════════════ */
-    #bottomActions {
-      position: fixed; bottom: 20px; left: 50%;
-      transform: translateX(-50%);
-      display: flex; gap: 8px;
-      z-index: 200;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.5s ease;
-    }
-
-    /* ══════════════════════════════
        LOCATION BTN
     ══════════════════════════════ */
     #locationBtn {
@@ -489,25 +477,6 @@
       border-color: var(--gold);
       color: var(--gold-light);
     }
-
-    /* ══════════════════════════════
-       WHATSAPP
-    ══════════════════════════════ */
-    #whatsappBtn {
-      position: fixed; bottom: 160px; right: 16px;
-      background: #1da851;
-      border-radius: 50%;
-      width: 50px; height: 50px;
-      display: flex; justify-content: center; align-items: center;
-      cursor: pointer; z-index: 230;
-      box-shadow: 0 0 0 1px rgba(29,168,81,0.3), 0 8px 24px rgba(0,0,0,0.4);
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.5s ease, transform 0.2s;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-    }
-    #whatsappBtn:active { transform: scale(0.92); }
-    #whatsappBtn img { width: 26px; height: 26px; pointer-events: none; }
 
     /* ══════════════════════════════
        SCAN HINT
@@ -561,9 +530,7 @@
        iOS SAFE AREA
     ══════════════════════════════ */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
-      #bottomActions { bottom: calc(20px + env(safe-area-inset-bottom)); }
-      #dishCarousel  { bottom: calc(90px + env(safe-area-inset-bottom)); }
-      #whatsappBtn   { bottom: calc(160px + env(safe-area-inset-bottom)); }
+      #dishCarousel { bottom: calc(20px + env(safe-area-inset-bottom)); }
     }
 
     /* ══════════════════════════════
@@ -670,20 +637,6 @@
   <!-- ══ CAROUSEL ══ -->
   <div id="dishCarousel"></div>
 
-  <!-- ══ BOTTOM ACTIONS ══ -->
-  <div id="bottomActions">
-    <button class="plan-button" onclick="window.location.href='https://jewels-ai.github.io/Ai_Jewellery_Demo_Ai/'">✦ Try Jewellery</button>
-    <button class="plan-button" onclick="window.open('https://jewels-ai.github.io/Ai_savings-plan_Ai/')">◈ Savings Plan</button>
-  </div>
-
-  <!-- ══ LOCATION ══ -->
-  <button class="plan-button" id="locationBtn" onclick="window.open('https://maps.app.goo.gl/U3cmv1V6CV9e95QB8')">↗ Location</button>
-
-  <!-- ══ WHATSAPP ══ -->
-  <div id="whatsappBtn" onclick="window.open('https://wa.me/917019743880','_blank')">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
-  </div>
-
   <!-- ══ AR SCENE ══ -->
   <a-scene
     id="arScene"
@@ -749,9 +702,6 @@
     const dishLabel      = document.querySelector('#dishLabel');
     const dishLabelText  = document.querySelector('#dishLabelText');
     const carousel       = document.querySelector('#dishCarousel');
-    const locationBtn    = document.querySelector('#locationBtn');
-    const bottomActions  = document.querySelector('#bottomActions');
-    const whatsappBtn    = document.querySelector('#whatsappBtn');
     const logo           = document.querySelector('#logo');
     const scanHint       = document.querySelector('#scanHint');
     const target         = document.querySelector('#target1');
@@ -761,10 +711,10 @@
     const errorOverlay   = document.querySelector('#errorOverlay');
     const modelLoader    = document.querySelector('#modelLoader');
 
-    // Elements always visible once AR starts
-    const alwaysVisible = [carousel, bottomActions, whatsappBtn, locationBtn];
-    // Elements only visible when marker is found
-    const markerEls = [logo, dishLabel];
+    // Always visible once AR camera starts
+    const alwaysVisible = [carousel, logo];
+    // Only shown when AR marker (menu card) is detected
+    const markerEls = [dishLabel];
 
     /* ── BUILD CAROUSEL ── */
     dishes.forEach((dish, i) => {
