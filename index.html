@@ -51,7 +51,6 @@
       opacity: 0; transform: scale(1.04); pointer-events: none;
     }
 
-    /* Seigaiha pattern bg */
     #splash::before {
       content: '';
       position: absolute; inset: 0;
@@ -59,24 +58,12 @@
       opacity: 0.06; pointer-events: none;
     }
 
-    /* Gold ink wash glow */
-    #splash::after {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse 70% 50% at 25% 75%, rgba(139,26,26,0.2) 0%, transparent 65%),
-        radial-gradient(ellipse 50% 70% at 75% 25%, rgba(154,120,32,0.15) 0%, transparent 60%);
-      pointer-events: none;
-    }
-
     .splash-content {
       position: relative; z-index: 2;
       display: flex; flex-direction: column;
       align-items: center; text-align: center;
-      gap: 0;
     }
 
-    /* Spinning mon (crest) */
     .splash-mon {
       width: 80px; height: 80px;
       border: 1.5px solid rgba(196,160,48,0.4);
@@ -91,719 +78,264 @@
       font-size: 38px; color: var(--crimson-lt);
       animation: monSpin 18s linear infinite reverse;
     }
-    .splash-mon::after {
-      content: '';
-      position: absolute; inset: -8px;
-      border: 1px solid rgba(196,160,48,0.15);
-      border-radius: 50%;
-    }
     @keyframes monSpin { to { transform: rotate(360deg); } }
 
-    .splash-kanji {
-      font-family: 'Noto Serif JP', serif;
-      font-size: 11px; letter-spacing: 10px;
-      color: rgba(245,237,224,0.35);
-      margin-bottom: 12px;
-    }
     .splash-title {
       font-family: 'Cinzel', serif;
       font-size: clamp(32px, 8vw, 52px);
       font-weight: 700; letter-spacing: 0.1em;
-      line-height: 1;
       background: linear-gradient(160deg, #f6edde 30%, var(--gold-pale) 65%, #f6edde 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 6px;
-    }
-    .splash-title-jp {
-      font-family: 'Noto Serif JP', serif;
-      font-size: clamp(14px, 4vw, 20px); font-weight: 300;
-      color: rgba(245,237,224,0.45); letter-spacing: 0.4em;
       margin-bottom: 28px;
     }
 
-    .brush-line {
-      width: 100px; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--crimson-lt), transparent);
-      margin: 0 auto 28px;
-      position: relative;
-    }
-    .brush-line::before, .brush-line::after {
-      content: '◆'; position: absolute; top: 50%;
-      transform: translateY(-50%); font-size: 5px; color: var(--gold-lt);
-    }
-    .brush-line::before { left: 14px; }
-    .brush-line::after  { right: 14px; }
-
-    .splash-tagline {
-      font-size: 11px; letter-spacing: 3px;
-      color: rgba(245,237,224,0.35);
-      text-transform: uppercase; margin-bottom: 40px;
-      font-family: 'Cinzel', serif;
-    }
-
-    /* AR instructions card */
     .splash-instructions {
       background: rgba(245,237,224,0.05);
       border: 1px solid rgba(196,160,48,0.18);
       padding: 16px 22px; margin-bottom: 36px;
       max-width: 320px;
-    }
-    .splash-instructions p {
-      font-size: 12px; line-height: 1.9;
       color: rgba(245,237,224,0.5);
-      letter-spacing: 0.5px;
-    }
-    .splash-instructions strong {
-      color: var(--gold-lt); font-weight: 500;
+      font-size: 12px; line-height: 1.9;
     }
 
     #start-btn {
-      position: relative; overflow: hidden;
       background: var(--crimson);
       color: var(--washi);
       border: none;
       padding: 16px 48px;
       font-family: 'Cinzel', serif;
       font-size: 13px; font-weight: 600;
-      letter-spacing: 3px; text-transform: uppercase;
+      letter-spacing: 3px;
       cursor: pointer;
-      transition: box-shadow 0.2s;
-      min-height: 54px;
       box-shadow: 0 6px 28px rgba(139,26,26,0.5);
     }
-    #start-btn::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, var(--crimson-lt), var(--crimson));
-      opacity: 0; transition: opacity 0.2s;
-    }
-    #start-btn:hover::before { opacity: 1; }
-    #start-btn:active { transform: scale(0.97); }
-    #start-btn span { position: relative; z-index: 1; }
 
     /* ─── AR SCENE ─── */
     #ar-scene-wrap {
       position: fixed; inset: 0; z-index: 1;
-      display: none;
+      visibility: hidden;
     }
-    #ar-scene-wrap.active { display: block; }
+    #ar-scene-wrap.active { visibility: visible; }
 
-    a-scene {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    /* ─── OVERLAY UI (on top of camera) ─── */
+    /* ─── UI ELEMENTS ─── */
     #ar-ui {
       position: fixed; inset: 0; z-index: 100;
-      pointer-events: none;
       display: none; flex-direction: column;
       justify-content: space-between;
+      pointer-events: none;
     }
-    #ar-ui.active { display: flex; pointer-events: none; }
+    #ar-ui.active { display: flex; }
 
-    /* Top bar */
     #ar-topbar {
       pointer-events: auto;
       background: linear-gradient(180deg, rgba(10,6,2,0.85) 0%, transparent 100%);
       padding: 16px 20px 28px;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .topbar-brand {
-      display: flex; flex-direction: column;
-    }
-    .topbar-title {
-      font-family: 'Cinzel', serif;
-      font-size: 18px; font-weight: 600; letter-spacing: 0.08em;
-      color: var(--washi);
-    }
-    .topbar-jp {
-      font-family: 'Noto Serif JP', serif;
-      font-size: 10px; font-weight: 300;
-      color: rgba(245,237,224,0.4); letter-spacing: 3px;
-    }
 
-    /* Marker status indicator */
+    .topbar-title { font-family: 'Cinzel', serif; color: var(--washi); font-size: 18px; }
+
     #marker-status {
       display: flex; align-items: center; gap: 7px;
       background: rgba(10,6,2,0.7);
       border: 1px solid rgba(196,160,48,0.2);
       padding: 7px 14px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 10px; letter-spacing: 1.5px;
-      color: rgba(245,237,224,0.55);
-    }
-    .status-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--ink-faint);
-      transition: background 0.3s;
-      flex-shrink: 0;
-    }
-    .status-dot.found { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.6); }
-    .status-dot.lost  { background: var(--ink-faint); }
-
-    /* Scan guide frame */
-    #scan-guide {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(260px, 70vw); height: min(160px, 43vw);
-      pointer-events: none;
-      opacity: 1; transition: opacity 0.4s;
-    }
-    #scan-guide.hidden { opacity: 0; }
-    .scan-corner {
-      position: absolute; width: 22px; height: 22px;
-      border-color: rgba(196,160,48,0.7); border-style: solid;
-    }
-    .scan-corner.tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
-    .scan-corner.tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
-    .scan-corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
-    .scan-corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
-    .scan-label {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      font-family: 'Cinzel', serif; font-size: 9px;
-      letter-spacing: 2.5px; color: rgba(196,160,48,0.6);
-      text-transform: uppercase; white-space: nowrap;
-      animation: scanPulse 2s ease-in-out infinite;
-    }
-    @keyframes scanPulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
+      font-size: 10px; color: rgba(245,237,224,0.55);
     }
 
-    /* ─── BOTTOM DISH GRID ─── */
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #999; }
+    .status-dot.found { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+
     #dish-panel {
       pointer-events: auto;
       background: linear-gradient(0deg, rgba(10,6,2,0.96) 0%, rgba(10,6,2,0.88) 80%, transparent 100%);
       padding: 28px 14px 20px;
     }
 
-    .panel-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 12px; padding: 0 4px;
-    }
-    .panel-label {
-      font-family: 'Cinzel', serif;
-      font-size: 9px; letter-spacing: 3px;
-      color: var(--gold-lt); text-transform: uppercase;
-    }
-    .panel-line {
-      flex: 1; height: 1px;
-      background: linear-gradient(90deg, rgba(196,160,48,0.3), transparent);
-    }
-
-    /* Grid: 3 columns on mobile, scrollable */
     #dish-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       max-height: 220px;
       overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(139,26,26,0.4) transparent;
-      padding-right: 2px;
     }
-    #dish-grid::-webkit-scrollbar { width: 3px; }
-    #dish-grid::-webkit-scrollbar-track { background: transparent; }
-    #dish-grid::-webkit-scrollbar-thumb { background: rgba(139,26,26,0.4); border-radius: 2px; }
 
     .dish-card {
       background: rgba(245,237,224,0.06);
       border: 1px solid rgba(245,237,224,0.08);
-      padding: 10px 6px 9px;
+      padding: 10px 6px;
       display: flex; flex-direction: column;
       align-items: center; gap: 5px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: background 0.18s, border-color 0.18s, transform 0.15s;
-      position: relative; overflow: hidden;
-    }
-    .dish-card::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: var(--crimson);
-      opacity: 0; transition: opacity 0.18s;
-    }
-    .dish-card:active { transform: scale(0.95); }
-    .dish-card.active {
-      border-color: var(--crimson-lt);
-      background: rgba(139,26,26,0.25);
-    }
-    .dish-card.active::before { opacity: 0.12; }
-
-    .dish-card > * { position: relative; z-index: 1; }
-
-    .dish-emoji {
-      font-size: 26px; line-height: 1;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-    }
-    .dish-card-name {
-      font-family: 'Noto Serif JP', serif;
-      font-size: 9.5px; font-weight: 400;
-      color: rgba(245,237,224,0.8);
-      letter-spacing: 0.3px;
       text-align: center;
-      line-height: 1.3;
+      color: white;
     }
-    .dish-card-price {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 12px; font-weight: 600;
-      color: var(--gold-lt);
-    }
-    .dish-card-veg {
-      position: absolute; top: 4px; right: 4px;
-      width: 10px; height: 10px;
-      background: var(--sage);
-      border-radius: 50%;
-      border: 1px solid var(--sage-lt);
-    }
+    .dish-card.active { border-color: var(--crimson-lt); background: rgba(139,26,26,0.25); }
 
-    /* Active selection glow ring */
-    .dish-card.active .dish-emoji {
-      animation: floatEmoji 1.8s ease-in-out infinite;
-    }
-    @keyframes floatEmoji {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-3px); }
-    }
-
-    /* ─── AR PLACED indicator ─── */
-    #ar-placed-toast {
-      position: fixed; top: 80px; left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: rgba(10,6,2,0.9);
-      border: 1px solid var(--gold);
-      padding: 8px 20px;
-      font-family: 'Cinzel', serif;
-      font-size: 10px; letter-spacing: 2px;
-      color: var(--gold-pale);
-      white-space: nowrap; z-index: 200;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.35s, transform 0.35s;
-    }
-    #ar-placed-toast.show {
-      opacity: 1; transform: translateX(-50%) translateY(0);
-    }
-
-    /* ─── LOADING overlay for model fetch ─── */
-    #model-loading {
-      position: fixed; bottom: 260px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(10,6,2,0.85);
-      border: 1px solid rgba(196,160,48,0.2);
-      padding: 8px 18px;
-      display: flex; align-items: center; gap: 9px;
-      z-index: 200; pointer-events: none;
-      opacity: 0; transition: opacity 0.25s;
-    }
-    #model-loading.show { opacity: 1; }
-    .ml-spinner {
-      width: 13px; height: 13px;
-      border: 2px solid rgba(196,160,48,0.2);
-      border-top-color: var(--gold-lt);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      flex-shrink: 0;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .ml-text {
-      font-family: 'Cinzel', serif; font-size: 9px;
-      letter-spacing: 2px; color: rgba(245,237,224,0.5);
-    }
-
-    /* ─── No marker tip ─── */
-    #no-marker-tip {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center; z-index: 150;
+    /* Toasts */
+    #ar-placed-toast, #model-loading {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      background: rgba(10,6,2,0.9); border: 1px solid var(--gold);
+      padding: 8px 20px; font-size: 10px; color: var(--gold-pale);
+      z-index: 200; opacity: 0; transition: opacity 0.3s;
       pointer-events: none;
-      opacity: 0; transition: opacity 0.5s;
     }
-    #no-marker-tip.show { opacity: 1; }
-    .nmt-icon { font-size: 40px; margin-bottom: 12px; display: block; }
-    .nmt-text {
-      font-family: 'Cinzel', serif; font-size: 11px;
-      letter-spacing: 2px; color: rgba(245,237,224,0.5);
-      line-height: 1.9;
-    }
+    #ar-placed-toast.show, #model-loading.show { opacity: 1; }
+    #model-loading { bottom: 260px; }
+    #ar-placed-toast { top: 80px; }
+
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     SPLASH SCREEN
-════════════════════════════════════════════ -->
 <div id="splash">
   <div class="splash-content">
     <div class="splash-mon"></div>
-    <p class="splash-kanji">日本料理</p>
     <h1 class="splash-title">Japanese Cuisine</h1>
-    <span class="splash-title-jp">日本料理</span>
-    <div class="brush-line"></div>
-    <p class="splash-tagline">AR Business Card Experience</p>
-
     <div class="splash-instructions">
       <p>
         <strong>① Point camera</strong> at your business card<br>
         <strong>② Card is detected</strong> as AR marker<br>
-        <strong>③ Tap any dish</strong> below to place 3D model<br>
-        <strong>④ Model appears</strong> on top of the card
+        <strong>③ Tap any dish</strong> to place 3D model
       </p>
     </div>
-
-    <button id="start-btn"><span>✦ &nbsp; Start AR Experience &nbsp; ✦</span></button>
+    <button id="start-btn"><span>✦ START EXPERIENCE ✦</span></button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     A-FRAME AR SCENE
-     NOTE: Replace 'targets/card.mind' with your
-     compiled MindAR target file (use MindAR
-     image compiler at https://hiukim.github.io/
-     mind-ar-js-doc/tools/compile).
-════════════════════════════════════════════ -->
 <div id="ar-scene-wrap">
   <a-scene
     id="ar-scene"
-    mindar-image="imageTargetSrc: targets/card.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no;"
+    mindar-image="imageTargetSrc: targets/card.mind; autoStart: false; uiLoading: no; uiScanning: no;"
     color-space="sRGB"
     renderer="colorManagement: true; physicallyCorrectLights: true;"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    device-orientation-permission-ui="enabled: true">
 
-    <a-assets id="a-assets" timeout="30000">
-      <!-- Assets injected dynamically by JS -->
-    </a-assets>
+    <a-assets id="a-assets"></a-assets>
 
-    <!-- MindAR: target index 0 = your business card image -->
     <a-entity mindar-image-target="targetIndex: 0" id="ar-target">
-      <!-- Subtle ground shadow plane -->
-      <a-plane
-        rotation="-90 0 0"
-        width="1" height="1"
-        color="#000"
-        opacity="0.18"
-        material="transparent: true; depthWrite: false;">
-      </a-plane>
-
-      <!-- 3D model container — swapped dynamically -->
-      <a-entity id="model-container" position="0 0.05 0" rotation="0 0 0" scale="1 1 1">
-        <!-- model-gltf injected here -->
-      </a-entity>
-
-      <!-- Subtle crimson ring on card surface -->
-      <a-ring
-        color="#8b1a1a"
-        inner-radius="0.42" outer-radius="0.45"
-        rotation="-90 0 0"
-        opacity="0.5"
-        material="transparent: true;">
-      </a-ring>
-      <!-- Gold accent ring -->
-      <a-ring
-        color="#c4a030"
-        inner-radius="0.46" outer-radius="0.47"
-        rotation="-90 0 0"
-        opacity="0.3"
-        material="transparent: true;">
-      </a-ring>
+      <a-entity id="model-container" position="0 0.05 0"></a-entity>
+      <a-ring color="#8b1a1a" inner-radius="0.42" outer-radius="0.45" rotation="-90 0 0" opacity="0.5"></a-ring>
     </a-entity>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-    <!-- Ambient + directional light for good model rendering -->
-    <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
-    <a-light type="directional" color="#fff5e0" intensity="1.0" position="1 3 2"></a-light>
-    <a-light type="directional" color="#ffe8c0" intensity="0.3" position="-2 1 -1"></a-light>
+    <a-light type="ambient" intensity="0.7"></a-light>
+    <a-light type="directional" intensity="1.0" position="1 3 2"></a-light>
   </a-scene>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     AR OVERLAY UI
-════════════════════════════════════════════ -->
 <div id="ar-ui">
-  <!-- Top bar -->
   <div id="ar-topbar">
-    <div class="topbar-brand">
-      <div class="topbar-title">Japanese Cuisine</div>
-      <div class="topbar-jp">日本料理 · AR Menu</div>
-    </div>
+    <div class="topbar-title">Japanese Cuisine</div>
     <div id="marker-status">
       <div class="status-dot" id="status-dot"></div>
       <span id="status-text">Scanning…</span>
     </div>
   </div>
 
-  <!-- Scan guide (center) -->
-  <div id="scan-guide">
-    <div class="scan-corner tl"></div>
-    <div class="scan-corner tr"></div>
-    <div class="scan-corner bl"></div>
-    <div class="scan-corner br"></div>
-    <div class="scan-label">Point at business card</div>
-  </div>
-
-  <!-- Bottom dish grid -->
   <div id="dish-panel">
-    <div class="panel-header">
-      <span class="panel-label">Select a Dish</span>
-      <div class="panel-line"></div>
-      <span class="panel-label">選択</span>
-    </div>
     <div id="dish-grid"></div>
   </div>
 </div>
 
-<!-- Toasts / loaders -->
 <div id="ar-placed-toast">✦ Placed on card</div>
-<div id="model-loading">
-  <div class="ml-spinner"></div>
-  <span class="ml-text">Loading model…</span>
-</div>
-<div id="no-marker-tip">
-  <span class="nmt-icon">🎴</span>
-  <div class="nmt-text">
-    Point your camera at<br>the <strong style="color:rgba(196,160,48,0.8)">business card</strong><br>to place the dish
-  </div>
-</div>
+<div id="model-loading"><span class="ml-text">Loading 3D Model…</span></div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   DISH DATA
-   (Same structure as your original code —
-    adjust names/prices/flags to match your sheet)
-═══════════════════════════════════════════════ */
-const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
 const ASSETS_BASE = '3d-model';
-
 const DISHES = [
-  { id:'gyoza',          name:'Gyoza',          jp:'餃子',      emoji:'🥟', price:180, veg:false, folder:'Gyoza',          file:'Gyoza',          scale:0.3  },
-  { id:'edamame',        name:'Edamame',         jp:'枝豆',      emoji:'🫘', price:120, veg:true,  folder:'Edamame',         file:'Edamame',         scale:0.06 },
-  { id:'karaage',        name:'Karaage',         jp:'唐揚げ',    emoji:'🍗', price:220, veg:false, folder:'Karaage',         file:'Karaage',         scale:0.15 },
-  { id:'miso-soup',      name:'Miso Soup',       jp:'味噌汁',    emoji:'🍵', price:90,  veg:true,  folder:'Miso-Soup',       file:'Miso-Soup',       scale:0.3  },
-  { id:'takoyaki',       name:'Takoyaki',        jp:'たこ焼き',  emoji:'🐙', price:160, veg:false, folder:'Takoyaki',        file:'Takoyaki',        scale:0.5  },
-  { id:'agedashi-tofu',  name:'Agedashi Tofu',   jp:'揚げ出し豆腐',emoji:'🫕',price:170, veg:true,  folder:'Agedashi-Tofu',   file:'Agedashi-Tofu',   scale:0.15 },
-  { id:'ramen',          name:'Ramen',           jp:'ラーメン',   emoji:'🍜', price:320, veg:false, folder:'Ramen',           file:'Ramen',           scale:0.2  },
-  { id:'salmon-sashimi', name:'Salmon Sashimi',  jp:'鮭刺身',    emoji:'🐟', price:280, veg:false, folder:'Salmon-Sashimi',  file:'Salmon-Sashimi',  scale:0.3  },
-  { id:'tempura',        name:'Tempura',         jp:'天ぷら',    emoji:'🍤', price:240, veg:false, folder:'Tempura',         file:'Tempura',         scale:0.3  },
-  { id:'matcha-ice',     name:'Matcha Ice Cream',jp:'抹茶アイス', emoji:'🍦', price:130, veg:true,  folder:'Matcha-Ice-Cream',file:'Matcha-Ice-Cream',scale:0.3  },
+  { id:'gyoza', name:'Gyoza', emoji:'🥟', price:180, folder:'Gyoza', file:'Gyoza', scale:0.3 },
+  { id:'edamame', name:'Edamame', emoji:'🫘', price:120, folder:'Edamame', file:'Edamame', scale:0.06 },
+  { id:'ramen', name:'Ramen', emoji:'🍜', price:320, folder:'Ramen', file:'Ramen', scale:0.2 },
+  { id:'tempura', name:'Tempura', emoji:'🍤', price:240, folder:'Tempura', file:'Tempura', scale:0.3 }
 ];
 
-/* ═══════════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════════ */
-let arStarted    = false;
-let markerFound  = false;
+let arStarted = false;
+let markerFound = false;
 let activeDishId = null;
-let markerEntity = null;
-let arScene      = null;
-let noMarkerTimeout = null;
 
-/* ═══════════════════════════════════════════════
-   SPLASH → AR
-═══════════════════════════════════════════════ */
 document.getElementById('start-btn').addEventListener('click', startAR);
 
 async function startAR() {
   if (arStarted) return;
   arStarted = true;
 
-  const splash = document.getElementById('splash');
-  splash.classList.add('hidden');
-  splash.addEventListener('transitionend', () => splash.remove(), { once: true });
-
+  document.getElementById('splash').classList.add('hidden');
   document.getElementById('ar-scene-wrap').classList.add('active');
   document.getElementById('ar-ui').classList.add('active');
 
-  arScene      = document.getElementById('ar-scene');
-  markerEntity = document.getElementById('ar-target');
+  const sceneEl = document.querySelector('a-scene');
+  const startSystem = () => {
+    const minarSystem = sceneEl.systems['mindar-image-system'];
+    if (minarSystem) minarSystem.start(); 
+  };
 
-  // Build dish grid
+  if (sceneEl.hasLoaded) {
+    startSystem();
+  } else {
+    sceneEl.addEventListener('loaded', startSystem);
+  }
+
   buildDishGrid();
 
-  // Wait for A-Frame scene to be ready, then start MindAR
-  arScene.addEventListener('loaded', () => {
-    const mindar = arScene.systems['mindar-image-system'];
-    if (mindar) mindar.start();
+  const target = document.getElementById('ar-target');
+  target.addEventListener('targetFound', () => {
+    markerFound = true;
+    document.getElementById('status-dot').classList.add('found');
+    document.getElementById('status-text').textContent = 'Card Detected';
   });
-
-  // Marker found/lost events
-  markerEntity.addEventListener('targetFound', onMarkerFound);
-  markerEntity.addEventListener('targetLost',  onMarkerLost);
+  target.addEventListener('targetLost', () => {
+    markerFound = false;
+    document.getElementById('status-dot').classList.remove('found');
+    document.getElementById('status-text').textContent = 'Scanning…';
+  });
 }
 
-function onMarkerFound() {
-  markerFound = true;
-  document.getElementById('status-dot').className  = 'status-dot found';
-  document.getElementById('status-text').textContent = 'Card detected ✓';
-  document.getElementById('scan-guide').classList.add('hidden');
-  document.getElementById('no-marker-tip').classList.remove('show');
-  clearTimeout(noMarkerTimeout);
-}
-
-function onMarkerLost() {
-  markerFound = false;
-  document.getElementById('status-dot').className  = 'status-dot lost';
-  document.getElementById('status-text').textContent = 'Scanning…';
-  document.getElementById('scan-guide').classList.remove('hidden');
-}
-
-/* ═══════════════════════════════════════════════
-   BUILD DISH GRID
-═══════════════════════════════════════════════ */
 function buildDishGrid() {
   const grid = document.getElementById('dish-grid');
   grid.innerHTML = DISHES.map(d => `
-    <div class="dish-card" data-id="${d.id}" onclick="selectDish('${d.id}')">
-      ${d.veg ? '<div class="dish-card-veg"></div>' : ''}
-      <div class="dish-emoji">${d.emoji}</div>
-      <div class="dish-card-name">${d.name}</div>
-      <div class="dish-card-price">₹${d.price}</div>
+    <div class="dish-card" onclick="selectDish('${d.id}')" id="card-${d.id}">
+      <div style="font-size:24px">${d.emoji}</div>
+      <div style="font-size:10px">${d.name}</div>
+      <div style="color:#c4a030">₹${d.price}</div>
     </div>
   `).join('');
 }
 
-/* ═══════════════════════════════════════════════
-   SELECT DISH → PLACE 3D MODEL
-═══════════════════════════════════════════════ */
 function selectDish(id) {
   if (id === activeDishId) return;
   activeDishId = id;
 
-  // Update card highlight
-  document.querySelectorAll('.dish-card').forEach(c => {
-    c.classList.toggle('active', c.dataset.id === id);
-  });
-
-  // If marker not found, show tip
-  if (!markerFound) {
-    showNoMarkerTip();
-  }
-
-  // Show loading indicator
-  showLoader(true);
-
-  // Load model into scene
+  document.querySelectorAll('.dish-card').forEach(c => c.classList.toggle('active', c.id === `card-${id}`));
+  
+  document.getElementById('model-loading').classList.add('show');
   loadModel(id);
 }
 
-function showNoMarkerTip() {
-  const tip = document.getElementById('no-marker-tip');
-  tip.classList.add('show');
-  clearTimeout(noMarkerTimeout);
-  noMarkerTimeout = setTimeout(() => tip.classList.remove('show'), 3000);
-}
-
-function showLoader(on) {
-  document.getElementById('model-loading').classList.toggle('show', on);
-}
-
-function showPlacedToast() {
-  const t = document.getElementById('ar-placed-toast');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-/* ═══════════════════════════════════════════════
-   LOAD / SWAP 3D MODEL
-═══════════════════════════════════════════════ */
 function loadModel(id) {
   const dish = DISHES.find(d => d.id === id);
-  if (!dish) { showLoader(false); return; }
-
   const container = document.getElementById('model-container');
-
-  // Remove existing model entity
-  const old = document.getElementById('active-model-entity');
-  if (old) old.parentNode.removeChild(old);
-
-  // Preload asset
-  const assets   = document.getElementById('a-assets');
-  const assetId  = `model-asset-${dish.id}`;
-  const modelExt = isIOS && dish.usdzPath ? 'usdz' : 'glb';
-  const modelSrc = `${ASSETS_BASE}/${dish.folder}/${dish.file}.${modelExt}`;
-
-  // Remove old asset item if exists (force re-cache)
-  const oldAsset = document.getElementById(assetId);
-  if (oldAsset) oldAsset.remove();
-
-  // Create <a-asset-item>
-  const assetItem = document.createElement('a-asset-item');
-  assetItem.id  = assetId;
-  assetItem.setAttribute('src', modelSrc);
-  assets.appendChild(assetItem);
-
-  assetItem.addEventListener('loaded', () => {
-    injectModelEntity(dish, `#${assetId}`);
-  });
-  assetItem.addEventListener('error', () => {
-    console.warn(`Model not found: ${modelSrc} — showing emoji fallback`);
-    showLoader(false);
-    injectEmojiLabel(dish, container);
-  });
-}
-
-function injectModelEntity(dish, assetRef) {
-  const container = document.getElementById('model-container');
-  const s = dish.scale ?? 1;
+  
+  // Clear previous
+  container.innerHTML = '';
 
   const entity = document.createElement('a-entity');
-  entity.id = 'active-model-entity';
-  entity.setAttribute('gltf-model', assetRef);
-  entity.setAttribute('scale', `${s} ${s} ${s}`);
-  entity.setAttribute('position', '0 0 0');
-  entity.setAttribute('rotation', '0 0 0');
-
-  // Float + slow spin animation
-  entity.setAttribute('animation__float', [
-    'property: position',
-    'from: 0 0.00 0',
-    'to: 0 0.04 0',
-    'dir: alternate',
-    'dur: 1800',
-    'easing: easeInOutSine',
-    'loop: true',
-  ].join('; '));
-  entity.setAttribute('animation__spin', [
-    'property: rotation',
-    'from: 0 0 0',
-    'to: 0 360 0',
-    'dur: 9000',
-    'easing: linear',
-    'loop: true',
-  ].join('; '));
-
+  entity.setAttribute('gltf-model', `${ASSETS_BASE}/${dish.folder}/${dish.file}.glb`);
+  entity.setAttribute('scale', `${dish.scale} ${dish.scale} ${dish.scale}`);
+  
   entity.addEventListener('model-loaded', () => {
-    showLoader(false);
-    showPlacedToast();
+    document.getElementById('model-loading').classList.remove('show');
+    if (markerFound) {
+      document.getElementById('ar-placed-toast').classList.add('show');
+      setTimeout(() => document.getElementById('ar-placed-toast').classList.remove('show'), 2000);
+    }
   });
+
   entity.addEventListener('model-error', () => {
-    showLoader(false);
+    document.getElementById('model-loading').classList.remove('show');
+    console.error("Model failed to load");
   });
 
-  container.appendChild(entity);
-}
-
-// Fallback: emoji as a-text if GLB fails to load
-function injectEmojiLabel(dish, container) {
-  const entity = document.createElement('a-entity');
-  entity.id = 'active-model-entity';
-  entity.setAttribute('text', `value: ${dish.emoji}; align: center; width: 0.5; color: #f6edde;`);
-  entity.setAttribute('position', '0 0.1 0');
-  entity.setAttribute('animation__float', [
-    'property: position',
-    'from: 0 0.08 0',
-    'to: 0 0.14 0',
-    'dir: alternate',
-    'dur: 1800',
-    'easing: easeInOutSine',
-    'loop: true',
-  ].join('; '));
   container.appendChild(entity);
 }
 </script>
