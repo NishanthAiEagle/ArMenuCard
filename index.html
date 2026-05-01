@@ -603,15 +603,15 @@
         <div class="start-ornament-line right"></div>
       </div>
 
-      <h1>Explore The Flavours Of Japan</em></h1>
+      <h1>Explore the<br>flavours of <em>Japan</em></h1>
 
-      <p>Point your camera at the Business card to see every dish rendered in stunning 3D, right at your Card.</p>
+      <p>Point your camera at the menu card to see every dish rendered in stunning 3D, right at your table.</p>
 
       <button id="startBtn">Activate Camera</button>
     </div>
 
     <div class="start-footer">
-      <span>Powered by KAZAN</span>
+      <span>Powered by AR</span>
       <div class="start-footer-dot"></div>
       <span>3D Preview</span>
       <div class="start-footer-dot"></div>
@@ -670,9 +670,14 @@
   <!-- ══ CAROUSEL ══ -->
   <div id="dishCarousel"></div>
 
+  <!-- ══ BOTTOM ACTIONS ══ -->
+  <div id="bottomActions">
+    <button class="plan-button" onclick="window.location.href='https://jewels-ai.github.io/Ai_Jewellery_Demo_Ai/'">✦ Try Jewellery</button>
+    <button class="plan-button" onclick="window.open('https://jewels-ai.github.io/Ai_savings-plan_Ai/')">◈ Savings Plan</button>
+  </div>
 
   <!-- ══ LOCATION ══ -->
-  <button class="plan-button" id="locationBtn" onclick="window.open('https://maps.app.goo.gl/wT3ydZyjVR798h1Y9')">↗ Location</button>
+  <button class="plan-button" id="locationBtn" onclick="window.open('https://maps.app.goo.gl/U3cmv1V6CV9e95QB8')">↗ Location</button>
 
   <!-- ══ WHATSAPP ══ -->
   <div id="whatsappBtn" onclick="window.open('https://wa.me/917019743880','_blank')">
@@ -756,7 +761,10 @@
     const errorOverlay   = document.querySelector('#errorOverlay');
     const modelLoader    = document.querySelector('#modelLoader');
 
-    const overlayEls = [locationBtn, bottomActions, whatsappBtn, logo, dishLabel, carousel];
+    // Elements always visible once AR starts
+    const alwaysVisible = [carousel, bottomActions, whatsappBtn, locationBtn];
+    // Elements only visible when marker is found
+    const markerEls = [logo, dishLabel];
 
     /* ── BUILD CAROUSEL ── */
     dishes.forEach((dish, i) => {
@@ -827,6 +835,19 @@
           loadingOverlay.classList.remove('show');
           scanHint.style.opacity = '1';
           arStarted = true;
+
+          // Carousel + buttons always visible — user switches dishes without needing marker
+          alwaysVisible.forEach(el => {
+            el.style.opacity = '1';
+            el.style.pointerEvents = 'auto';
+          });
+
+          // Label + logo hidden until marker detected
+          markerEls.forEach(el => {
+            el.style.opacity = '0';
+            el.style.pointerEvents = 'none';
+          });
+
           selectDish(0);
         };
 
@@ -852,16 +873,18 @@
     });
 
     /* ── AR TARGET EVENTS ── */
+    // Card detected → show dish label + logo
     target.addEventListener('targetFound', () => {
-      overlayEls.forEach(el => {
+      markerEls.forEach(el => {
         el.style.opacity = '1';
         el.style.pointerEvents = 'auto';
       });
       scanHint.style.opacity = '0';
     });
 
+    // Card lost → hide label + logo only; carousel stays visible to switch dishes
     target.addEventListener('targetLost', () => {
-      overlayEls.forEach(el => {
+      markerEls.forEach(el => {
         el.style.opacity = '0';
         el.style.pointerEvents = 'none';
       });
