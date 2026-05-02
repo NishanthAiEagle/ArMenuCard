@@ -9,7 +9,6 @@
   <meta http-equiv="Permissions-Policy" content="camera=*">
   <title>AR Menu – 3D Dish Try-On</title>
 
-  <!-- A-Frame + MindAR loaded early, in <head>, so they're ready before body parses -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
@@ -25,6 +24,8 @@
       --ink: #0A0A0A;
       --cream: #F5F0E8;
       --glass-dark: rgba(6,5,4,0.72);
+      --glass-mid: rgba(12,10,8,0.55);
+      --white-soft: rgba(255,255,255,0.06);
       --radius: 14px;
       --radius-pill: 100px;
     }
@@ -48,15 +49,13 @@
       width: 100% !important; height: 100% !important;
       position: fixed !important; top: 0 !important; left: 0 !important;
     }
-    /* iOS requires these exact attributes on the video element */
     video {
       position: fixed !important; top: 0 !important; left: 0 !important;
       width: 100% !important; height: 100% !important;
       object-fit: cover !important; z-index: -1 !important;
-      -webkit-playsinline: true;
-      playsinline: true;
     }
 
+    /* ── NOISE TEXTURE OVERLAY ── */
     body::after {
       content: '';
       position: fixed; inset: 0;
@@ -64,15 +63,19 @@
       pointer-events: none; z-index: 5; opacity: 0.6;
     }
 
-    /* ── START SCREEN ── */
+    /* ══════════════════════════════
+       START SCREEN
+    ══════════════════════════════ */
     #startScreen {
       position: fixed; inset: 0;
       background: #060504;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       z-index: 999; padding: 40px 32px;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1);
     }
+
+    /* Decorative corner lines */
     #startScreen::before, #startScreen::after {
       content: '';
       position: absolute;
@@ -80,14 +83,21 @@
       border-color: var(--gold-border);
       border-style: solid;
     }
-    #startScreen::before { top: 24px; left: 24px; border-width: 1px 0 0 1px; }
-    #startScreen::after  { bottom: 24px; right: 24px; border-width: 0 1px 1px 0; }
+    #startScreen::before {
+      top: 24px; left: 24px;
+      border-width: 1px 0 0 1px;
+    }
+    #startScreen::after {
+      bottom: 24px; right: 24px;
+      border-width: 0 1px 1px 0;
+    }
 
     .start-inner {
       display: flex; flex-direction: column;
       align-items: center; gap: 0;
       max-width: 320px; width: 100%;
     }
+
     .start-ornament {
       display: flex; align-items: center; gap: 12px;
       margin-bottom: 28px;
@@ -104,44 +114,62 @@
       background: var(--gold);
       transform: rotate(45deg);
     }
+
     #startScreen img.start-logo {
       width: 72px; height: 72px;
       object-fit: contain;
       margin-bottom: 20px;
-      filter: brightness(0) invert(1) sepia(1) saturate(0.6);
+      filter: brightness(0) invert(1) sepia(1) saturate(0.6) hue-rotate(0deg);
     }
+
     .start-eyebrow {
+      font-family: 'Jost', sans-serif;
       font-size: 10px; font-weight: 400;
       letter-spacing: 0.22em;
       color: var(--gold);
       text-transform: uppercase;
       margin-bottom: 14px;
     }
+
     #startScreen h1 {
       font-family: 'Cormorant Garamond', serif;
       color: var(--cream);
-      font-size: 36px; font-weight: 300;
-      letter-spacing: 0.01em; line-height: 1.15;
-      text-align: center; margin-bottom: 20px;
+      font-size: 36px;
+      font-weight: 300;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+      text-align: center;
+      margin-bottom: 20px;
     }
-    #startScreen h1 em { font-style: italic; color: var(--gold-light); }
+    #startScreen h1 em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
     #startScreen p {
       color: rgba(245,240,232,0.42);
-      font-size: 13px; font-weight: 300;
-      text-align: center; line-height: 1.75;
-      margin-bottom: 36px; letter-spacing: 0.03em;
+      font-size: 13px;
+      font-weight: 300;
+      text-align: center;
+      line-height: 1.75;
+      margin-bottom: 36px;
+      letter-spacing: 0.03em;
     }
+
     #startBtn {
       position: relative;
       padding: 16px 42px;
       font-family: 'Jost', sans-serif;
-      font-size: 12px; font-weight: 400;
-      letter-spacing: 0.18em; text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       border: 1px solid var(--gold-border);
       border-radius: var(--radius-pill);
       background: transparent;
       color: var(--gold-light);
-      cursor: pointer; overflow: hidden;
+      cursor: pointer;
+      overflow: hidden;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       transition: color 0.3s, border-color 0.3s;
@@ -164,14 +192,18 @@
     }
     .start-footer span {
       font-size: 10px; letter-spacing: 0.12em;
-      color: rgba(245,240,232,0.2); text-transform: uppercase;
+      color: rgba(245,240,232,0.2);
+      text-transform: uppercase;
     }
     .start-footer-dot {
       width: 3px; height: 3px;
-      border-radius: 50%; background: var(--gold-border);
+      border-radius: 50%;
+      background: var(--gold-border);
     }
 
-    /* ── LOADING ── */
+    /* ══════════════════════════════
+       LOADING
+    ══════════════════════════════ */
     #loadingOverlay {
       position: fixed; inset: 0;
       background: #060504;
@@ -195,19 +227,23 @@
     .loading-ring-diamond::after {
       content: '';
       width: 8px; height: 8px;
-      background: var(--gold); transform: rotate(45deg);
+      background: var(--gold);
+      transform: rotate(45deg);
     }
-    #loadingStatus {
+
+    #loadingOverlay p {
       color: rgba(245,240,232,0.4);
-      font-size: 11px; letter-spacing: 0.2em;
+      font-size: 11px;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      transition: opacity 0.3s;
     }
 
     @keyframes spin-slow { to { transform: rotate(360deg); } }
-    @keyframes spin      { to { transform: rotate(360deg); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── MINI MODEL LOADER ── */
+    /* ══════════════════════════════
+       MODEL LOADER (mini)
+    ══════════════════════════════ */
     #modelLoader {
       position: fixed; top: 56px; left: 50%;
       transform: translateX(-50%);
@@ -218,7 +254,8 @@
       border-radius: var(--radius-pill);
       padding: 7px 18px;
       color: rgba(245,240,232,0.6);
-      font-size: 10px; letter-spacing: 0.14em;
+      font-size: 10px;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       z-index: 300;
       display: none; align-items: center; gap: 9px;
@@ -232,7 +269,9 @@
       animation: spin 0.7s linear infinite;
     }
 
-    /* ── ERROR ── */
+    /* ══════════════════════════════
+       ERROR
+    ══════════════════════════════ */
     #errorOverlay {
       position: fixed; inset: 0;
       background: #060504;
@@ -242,34 +281,46 @@
       text-align: center;
     }
     #errorOverlay.show { display: flex; }
+
     .err-icon-wrap {
       width: 72px; height: 72px;
       border: 1px solid rgba(255,107,107,0.25);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 30px; margin-bottom: 8px;
+      font-size: 30px;
+      margin-bottom: 8px;
     }
+
     #errorOverlay h2 {
       font-family: 'Cormorant Garamond', serif;
-      color: #ff8080; font-size: 22px; font-weight: 400;
+      color: #ff8080;
+      font-size: 22px;
+      font-weight: 400;
     }
     #errorOverlay p {
       color: rgba(245,240,232,0.4);
-      font-size: 13px; line-height: 1.8; font-weight: 300;
+      font-size: 13px;
+      line-height: 1.8;
+      font-weight: 300;
       max-width: 300px;
     }
     #retryBtn {
       margin-top: 8px; padding: 12px 28px;
       font-family: 'Jost', sans-serif;
-      font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
-      border: 1px solid var(--gold-border); border-radius: var(--radius-pill);
-      background: transparent; color: var(--gold);
+      font-size: 11px; letter-spacing: 0.16em;
+      text-transform: uppercase;
+      border: 1px solid var(--gold-border);
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--gold);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
 
-    /* ── LOGO (in-AR) ── */
+    /* ══════════════════════════════
+       LOGO (in-AR) — always top left
+    ══════════════════════════════ */
     #logo {
       position: fixed; top: 14px; left: 14px;
       width: 72px; z-index: 200;
@@ -278,7 +329,9 @@
       filter: brightness(0) invert(1) sepia(1) saturate(0.5);
     }
 
-    /* ── DISH LABEL ── */
+    /* ══════════════════════════════
+       DISH LABEL
+    ══════════════════════════════ */
     #dishLabel {
       position: fixed; top: 14px; left: 50%;
       transform: translateX(-50%);
@@ -289,9 +342,12 @@
       border-radius: var(--radius-pill);
       padding: 9px 22px;
       font-family: 'Cormorant Garamond', serif;
-      font-size: 15px; font-weight: 400;
-      color: var(--gold-light); letter-spacing: 0.06em;
-      white-space: nowrap; z-index: 200;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--gold-light);
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      z-index: 200;
       opacity: 0; pointer-events: none;
       transition: opacity 0.5s ease;
       max-width: calc(100vw - 200px);
@@ -300,12 +356,16 @@
     #dishLabel .label-dot {
       display: inline-block;
       width: 5px; height: 5px;
-      background: var(--gold); border-radius: 50%;
-      margin-right: 10px; vertical-align: middle;
+      background: var(--gold);
+      border-radius: 50%;
+      margin-right: 10px;
+      vertical-align: middle;
       position: relative; top: -1px;
     }
 
-    /* ── CAROUSEL ── */
+    /* ══════════════════════════════
+       CAROUSEL
+    ══════════════════════════════ */
     #dishCarousel {
       position: fixed; bottom: 20px; left: 50%;
       transform: translateX(-50%);
@@ -330,7 +390,8 @@
       display: flex; flex-direction: column;
       align-items: center; gap: 5px;
       cursor: pointer; flex-shrink: 0;
-      padding: 4px 6px; border-radius: 50px;
+      padding: 4px 6px;
+      border-radius: 50px;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       transition: background 0.25s;
@@ -338,31 +399,88 @@
     .dish-thumb:active { transform: scale(0.92); }
     .dish-thumb.active { background: var(--gold-dim); }
 
-    .thumb-img-wrap { position: relative; width: 50px; height: 50px; }
+    .thumb-img-wrap {
+      position: relative;
+      width: 50px; height: 50px;
+    }
     .dish-thumb img {
       width: 50px; height: 50px;
-      object-fit: cover; border-radius: 50%;
+      object-fit: cover;
+      border-radius: 50%;
       border: 1.5px solid rgba(201,168,76,0.15);
       transition: border-color 0.25s, transform 0.25s;
       -webkit-user-drag: none;
-      user-select: none; pointer-events: none; display: block;
+      user-select: none; pointer-events: none;
+      display: block;
     }
-    .dish-thumb.active img { border-color: var(--gold); transform: scale(1.06); }
+    .dish-thumb.active img {
+      border-color: var(--gold);
+      transform: scale(1.06);
+    }
     .thumb-active-ring {
-      position: absolute; inset: -3px; border-radius: 50%;
-      border: 1px solid transparent; transition: border-color 0.25s;
+      position: absolute; inset: -3px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      transition: border-color 0.25s;
       pointer-events: none;
     }
-    .dish-thumb.active .thumb-active-ring { border-color: rgba(201,168,76,0.35); }
+    .dish-thumb.active .thumb-active-ring {
+      border-color: rgba(201,168,76,0.35);
+    }
+
     .dish-thumb span {
-      font-size: 8.5px; font-weight: 400; letter-spacing: 0.05em;
-      color: rgba(245,240,232,0.4); text-align: center;
-      max-width: 58px; line-height: 1.3;
-      transition: color 0.25s; text-transform: uppercase;
+      font-size: 8.5px;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      color: rgba(245,240,232,0.4);
+      text-align: center;
+      max-width: 58px;
+      line-height: 1.3;
+      transition: color 0.25s;
+      text-transform: uppercase;
     }
     .dish-thumb.active span { color: var(--gold); }
 
-    /* ── SCAN HINT ── */
+    /* ══════════════════════════════
+       LOCATION BTN
+    ══════════════════════════════ */
+    #locationBtn {
+      position: fixed; top: 14px; right: 14px;
+      z-index: 200;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    /* ══════════════════════════════
+       SHARED BUTTON STYLE
+    ══════════════════════════════ */
+    .plan-button {
+      padding: 10px 16px;
+      font-family: 'Jost', sans-serif;
+      font-size: 11px; font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border: 1px solid var(--gold-border);
+      border-radius: var(--radius-pill);
+      background: var(--glass-dark);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: rgba(245,240,232,0.75);
+      cursor: pointer;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background 0.25s, border-color 0.25s, color 0.25s;
+    }
+    .plan-button:active {
+      background: var(--gold-dim);
+      border-color: var(--gold);
+      color: var(--gold-light);
+    }
+
+    /* ══════════════════════════════
+       SCAN HINT
+    ══════════════════════════════ */
     #scanHint {
       position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
@@ -371,7 +489,10 @@
       pointer-events: none; z-index: 10;
       opacity: 0; transition: opacity 0.5s;
     }
-    .scan-frame { position: relative; width: 180px; height: 180px; }
+
+    .scan-frame {
+      position: relative; width: 180px; height: 180px;
+    }
     .scan-frame::before, .scan-frame::after,
     .scan-corner-br, .scan-corner-bl {
       content: '';
@@ -384,6 +505,7 @@
     .scan-frame::after  { top: 0; right: 0; border-width: 1px 1px 0 0; }
     .scan-corner-br { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
     .scan-corner-bl { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+
     .scan-line {
       position: absolute; top: 0; left: 8px; right: 8px;
       height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
@@ -395,21 +517,41 @@
       90% { opacity: 1; }
       50% { top: calc(100% - 8px); }
     }
+
     #scanHint p {
-      font-size: 11px; font-weight: 400;
-      letter-spacing: 0.18em; text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       color: rgba(245,240,232,0.45);
     }
 
-    /* ── iOS safe area ── */
+    /* ══════════════════════════════
+       iOS SAFE AREA
+    ══════════════════════════════ */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       #dishCarousel { bottom: calc(20px + env(safe-area-inset-bottom)); }
     }
 
+    /* ══════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════ */
     @media (max-width: 390px) {
       .dish-thumb img { width: 42px; height: 42px; }
       .thumb-img-wrap { width: 42px; height: 42px; }
       #startScreen h1 { font-size: 30px; }
+      .plan-button { padding: 9px 12px; font-size: 10px; }
+    }
+
+    /* ══════════════════════════════
+       TRANSITION HELPER
+    ══════════════════════════════ */
+    .fade-slide-in {
+      animation: fadeSlideIn 0.6s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -419,16 +561,22 @@
   <div id="startScreen">
     <div class="start-inner">
       <img class="start-logo" src="logo1.png" onerror="this.style.display='none'" alt="Logo">
+
       <p class="start-eyebrow">Augmented Reality Experience</p>
+
       <div class="start-ornament">
         <div class="start-ornament-line"></div>
         <div class="start-ornament-diamond"></div>
         <div class="start-ornament-line right"></div>
       </div>
+
       <h1>Explore the<br>flavours of <em>Japan</em></h1>
+
       <p>Point your camera at the menu card to see every dish rendered in stunning 3D, right at your table.</p>
+
       <button id="startBtn">Activate Camera</button>
     </div>
+
     <div class="start-footer">
       <span>Powered by AR</span>
       <div class="start-footer-dot"></div>
@@ -447,7 +595,7 @@
       </svg>
       <div class="loading-ring-diamond"></div>
     </div>
-    <p id="loadingStatus">Starting camera</p>
+    <p>Starting camera</p>
   </div>
 
   <!-- ══ MINI MODEL LOADER ══ -->
@@ -489,30 +637,21 @@
   <!-- ══ CAROUSEL ══ -->
   <div id="dishCarousel"></div>
 
-  <!--
-    ══ AR SCENE ══
-    Key cross-platform tuning:
-    - filterMinCF: 0.1  (was 1)  → iOS needs lower value; 1 = almost no tracking on Safari
-    - filterBeta:  10   (was 1000) → smoother, less jitter on both platforms
-    - missTolerance: 10            → forgives brief marker loss (hand movement etc.)
-    - warmupTolerance: 2           → faster initial detection (was 3)
-    - maxTrack: 1                  → single target, saves GPU
-  -->
+  <!-- ══ AR SCENE ══ -->
   <a-scene
     id="arScene"
     mindar-image="imageTargetSrc: ./targets/card.mind;
-                  filterMinCF: 0.1;
-                  filterBeta: 10;
-                  missTolerance: 10;
-                  warmupTolerance: 2;
-                  maxTrack: 1;
+                  filterMinCF: 1;
+                  filterBeta: 1000;
+                  missTolerance: 5;
+                  warmupTolerance: 3;
                   uiLoading: no;
                   uiError: no;
                   uiScanning: no"
     renderer="colorManagement: true;
               antialias: false;
               logarithmicDepthBuffer: false;
-              precision: mediump;
+              precision: high;
               physicallyCorrectLights: true"
     loading-screen="enabled: false"
     vr-mode-ui="enabled: false"
@@ -520,10 +659,7 @@
     device-orientation-permission-ui="enabled: false"
     style="display:none;">
 
-    <a-assets timeout="30000">
-      <!-- Preload first dish immediately so it's ready on first marker hit -->
-      <a-asset-item id="preload0" src="3d-model/Agedashi-Tofu/Agedashi-Tofu.glb"></a-asset-item>
-    </a-assets>
+    <a-assets timeout="60000"></a-assets>
 
     <a-light type="ambient"     color="#fff8ee" intensity="0.65"></a-light>
     <a-light type="directional" color="#fffaf0" intensity="0.9"  position="1 2 1"></a-light>
@@ -547,7 +683,7 @@
        DISH DATA
     ══════════════════════════════════════ */
     const dishes = [
-      { name: "Agedashi Tofu",    folder: "Agedashi-Tofu",    model: "Agedashi-Tofu.glb",   scale: ".8 .8 .8", rotation: "90 90 90" },
+      { name: "Agedashi Tofu",    folder: "Agedashi-Tofu",    model: "Agedashi-Tofu.glb",   scale: ".8 .8 .8",  rotation: "90 90 90" },
       { name: "Edamame",          folder: "Edamame",          model: "Edamame.glb",          scale: "4 4 4",    rotation: "90 90 90" },
       { name: "Gyoza",            folder: "Gyoza",            model: "Gyoza.glb",            scale: "8 8 8",    rotation: "90 90 90" },
       { name: "Karaage",          folder: "Karaage",          model: "Karaage.glb",          scale: "4 4 4",    rotation: "90 90 90" },
@@ -560,8 +696,7 @@
     ];
 
     let currentIndex = -1;
-    let arStarted    = false;
-    let modelTimeout = null;
+    let arStarted = false;
 
     const modelEntity    = document.querySelector('#modelEntity');
     const dishLabel      = document.querySelector('#dishLabel');
@@ -573,12 +708,13 @@
     const arScene        = document.querySelector('#arScene');
     const startScreen    = document.querySelector('#startScreen');
     const loadingOverlay = document.querySelector('#loadingOverlay');
-    const loadingStatus  = document.querySelector('#loadingStatus');
     const errorOverlay   = document.querySelector('#errorOverlay');
     const modelLoader    = document.querySelector('#modelLoader');
 
+    // Always visible once AR camera starts
     const alwaysVisible = [carousel, logo];
-    const markerEls     = [dishLabel];
+    // Only shown when AR marker (menu card) is detected
+    const markerEls = [dishLabel];
 
     /* ── BUILD CAROUSEL ── */
     dishes.forEach((dish, i) => {
@@ -594,8 +730,6 @@
         <span>${dish.name}</span>
       `;
       thumb.addEventListener('click', () => selectDish(i));
-      // Explicit touchend for iOS — prevents 300ms delay
-      thumb.addEventListener('touchend', (e) => { e.preventDefault(); selectDish(i); });
       carousel.appendChild(thumb);
     });
 
@@ -605,31 +739,24 @@
       currentIndex = index;
       const dish = dishes[index];
 
-      // Clear previous model-loaded timeout
-      if (modelTimeout) { clearTimeout(modelTimeout); modelTimeout = null; }
-
       modelLoader.classList.add('show');
       modelEntity.removeAttribute('gltf-model');
 
-      // rAF ensures removeAttribute flushes before setting new src
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          modelEntity.setAttribute('gltf-model', `3d-model/${dish.folder}/${dish.model}`);
-          modelEntity.setAttribute('scale',    dish.scale);
-          modelEntity.setAttribute('rotation', dish.rotation);
-          modelEntity.setAttribute('position', '0 0 0');
-        });
+        modelEntity.setAttribute('gltf-model', `3d-model/${dish.folder}/${dish.model}`);
+        modelEntity.setAttribute('scale',    dish.scale);
+        modelEntity.setAttribute('rotation', dish.rotation);
+        modelEntity.setAttribute('position', '0 0 0');
       });
 
       modelEntity.addEventListener('model-loaded', () => {
         modelLoader.classList.remove('show');
-        if (modelTimeout) { clearTimeout(modelTimeout); modelTimeout = null; }
       }, { once: true });
 
-      // Fallback: hide loader after 5s (down from 8s)
-      modelTimeout = setTimeout(() => modelLoader.classList.remove('show'), 5000);
+      setTimeout(() => modelLoader.classList.remove('show'), 8000);
 
       dishLabelText.textContent = dish.name;
+
       document.querySelectorAll('.dish-thumb').forEach((el, i) => {
         el.classList.toggle('active', i === index);
       });
@@ -642,44 +769,30 @@
       if (arStarted) return;
 
       startScreen.style.opacity = '0';
-      setTimeout(() => { startScreen.style.display = 'none'; }, 400);
+      setTimeout(() => { startScreen.style.display = 'none'; }, 500);
       loadingOverlay.classList.add('show');
-      loadingStatus.textContent = 'Starting camera';
 
       try {
-        // Detect iOS
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-        // iOS Safari requires exact constraint format for rear camera
-        const videoConstraints = isIOS
-          ? { facingMode: { exact: 'environment' } }
-          : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } };
-
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
+          video: { facingMode: { ideal: 'environment' } },
           audio: false
         });
         stream.getTracks().forEach(t => t.stop());
 
-        loadingStatus.textContent = 'Initialising AR';
-
-        // Show scene immediately — don't wait for 'loaded' event before displaying
         arScene.style.display = 'block';
 
-        let readyFired = false;
-
         const onReady = () => {
-          if (readyFired) return;
-          readyFired = true;
-
           loadingOverlay.classList.remove('show');
           scanHint.style.opacity = '1';
           arStarted = true;
 
+          // Carousel + buttons always visible — user switches dishes without needing marker
           alwaysVisible.forEach(el => {
             el.style.opacity = '1';
             el.style.pointerEvents = 'auto';
           });
+
+          // Label + logo hidden until marker detected
           markerEls.forEach(el => {
             el.style.opacity = '0';
             el.style.pointerEvents = 'none';
@@ -689,10 +802,7 @@
         };
 
         arScene.addEventListener('loaded', onReady, { once: true });
-        arScene.addEventListener('arReady',  onReady, { once: true });
-
-        // Reduced fallback: 3s (was 8s)
-        setTimeout(onReady, 3000);
+        setTimeout(() => { if (!arStarted) onReady(); }, 8000);
 
       } catch (err) {
         console.error('Camera error:', err);
@@ -701,21 +811,19 @@
       }
     }
 
-    /* ── BUTTON HANDLERS ──
-       Both click + touchend with preventDefault to eliminate iOS 300ms ghost delay */
-    ['click','touchend'].forEach(evt => {
-      document.querySelector('#startBtn').addEventListener(evt, (e) => {
-        e.preventDefault(); startAR();
-      });
-      document.querySelector('#retryBtn').addEventListener(evt, (e) => {
-        e.preventDefault();
-        errorOverlay.classList.remove('show');
-        startScreen.style.display = 'flex';
-        startScreen.style.opacity = '1';
-      });
+    document.querySelector('#startBtn').addEventListener('click', startAR);
+    document.querySelector('#startBtn').addEventListener('touchend', e => {
+      e.preventDefault(); startAR();
+    });
+
+    document.querySelector('#retryBtn').addEventListener('click', () => {
+      errorOverlay.classList.remove('show');
+      startScreen.style.display = 'flex';
+      startScreen.style.opacity = '1';
     });
 
     /* ── AR TARGET EVENTS ── */
+    // Card detected → show dish label + logo
     target.addEventListener('targetFound', () => {
       markerEls.forEach(el => {
         el.style.opacity = '1';
@@ -724,6 +832,7 @@
       scanHint.style.opacity = '0';
     });
 
+    // Card lost → hide label + logo only; carousel stays visible to switch dishes
     target.addEventListener('targetLost', () => {
       markerEls.forEach(el => {
         el.style.opacity = '0';
@@ -732,8 +841,15 @@
       scanHint.style.opacity = '1';
     });
 
-    /* ── Prevent accidental context menu / inspect on mobile ── */
-    document.addEventListener('contextmenu', e => e.preventDefault());
+    /* ── Block dev tools ── */
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.addEventListener("keydown", e => {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && ["I","J","C"].includes(e.key)) ||
+        (e.ctrlKey && e.key === "u")
+      ) { e.preventDefault(); alert("Action Disabled"); }
+    });
   </script>
 </body>
 </html>
